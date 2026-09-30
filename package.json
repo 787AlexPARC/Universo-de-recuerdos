@@ -1,0 +1,12 @@
+{
+  "name": "universo-recuerdos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Universo personalizado de recuerdos con osito 3D y flores interactivas",
+  "dependencies": {
+    "@vercel/kv": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

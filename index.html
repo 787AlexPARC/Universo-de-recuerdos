@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Universo de Recuerdos ✨</title>
+    <meta name="description" content="Un universo personalizado de recuerdos">
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #050515;
+            color: #e2e8f0;
+            user-select: none;
+        }
+
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+        }
+
+        .ui-element {
+            z-index: 10;
+            position: fixed;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .neon-glow {
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.6),
+                         0 0 20px rgba(147, 51, 234, 0.4);
+        }
+
+        #music-btn {
+            top: 1rem;
+            right: 1rem;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #music-btn:hover { color: #7dd3fc; transform: scale(1.05); }
+
+        #main-card-display {
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 420px;
+            padding: 1.25rem;
+            border-radius: 1rem;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: all 0.4s ease;
+        }
+        #main-card-display.visible {
+            display: flex;
+            animation: slideUp 0.4s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translate(-50%, 20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translate(-50%, -20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        #photo-preview-container {
+            width: 100%;
+            height: 180px;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            background: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        #display-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        #display-placeholder {
+            color: #64748b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+        }
+        #display-placeholder i {
+            font-size: 2rem;
+            color: rgba(56, 189, 248, 0.5);
+            margin-bottom: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        #display-text {
+            font-size: 0.875rem;
+            color: #e2e8f0;
+            font-style: italic;
+            min-height: 40px;
+            padding: 0 0.5rem;
+            line-height: 1.4;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 0.4rem;
+            border-radius: 0.5rem;
+            background: rgba(8, 47, 73, 0.5);
+            color: #38bdf8;
+            font-size: 0.75rem;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { background: rgba(12, 74, 110, 0.6); color: #7dd3fc; }
+
+        #open-config-btn {
+            bottom: 1rem;
+            left: 1rem;
+            padding: 0.5rem 0.9rem;
+            border-radius: 0.75rem;
+            font-size: 0.75rem;
+            color: #7dd3fc;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #open-config-btn:hover { color: #fff; transform: translateY(-2px); }
+        #open-config-btn i { animation: spin 8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #config-panel {
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            max-width: 420px;
+            padding: 1.5rem;
+            transform: translateX(-100%);
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid rgba(56, 189, 248, 0.2);
+        }
+        #config-panel.open { transform: translateX(0); }
+
+        .config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .config-header h2 {
+            font-size: 1.1rem;
+            color: #38bdf8;
+            margin: 0;
+            font-weight: 700;
+        }
+        #close-config-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: color 0.2s;
+        }
+        #close-config-btn:hover { color: #fff; }
+
+        .config-desc {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .input-group {
+            background: rgba(8, 47, 73, 0.3);
+            border: 1px solid rgba(56, 189, 248, 0.15);
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        .input-group label {
+            display: block;
+            font-size: 0.7rem;
+            color: #38bdf8;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .input-group input[type="file"] {
+            width: 100%;
+            font-size: 0.7rem;
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+        }
+        .input-group input[type="file"]::file-selector-button {
+            background: rgba(56, 189, 248, 0.2);
+            color: #7dd3fc;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 0.35rem 0.7rem;
+            border-radius: 0.4rem;
+            font-size: 0.7rem;
+            cursor: pointer;
+            margin-right: 0.5rem;
+        }
+        .input-group textarea {
+            width: 100%;
+            background: rgba(2, 6, 23, 0.6);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 0.4rem;
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            color: #e2e8f0;
+            resize: vertical;
+            min-height: 50px;
+            font-family: inherit;
+        }
+        .input-group textarea:focus { outline: none; border-color: #38bdf8; }
+
+        #generate-link-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #0ea5e9, #9333ea);
+            color: #fff;
+            font-weight: 600;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            border: none;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 16px rgba(14, 165, 233, 0.3);
+        }
+        #generate-link-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5);
+        }
+        #generate-link-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #link-output-container {
+            margin-top: 0.75rem;
+            display: none;
+        }
+        #link-output-container.visible { display: block; }
+
+        #generated-url {
+            width: 100%;
+            background: rgba(2, 6, 23, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            font-size: 0.7rem;
+            color: #34d399;
+            margin-bottom: 0.5rem;
+            font-family: monospace;
+        }
+
+        #copy-link-btn {
+            width: 100%;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #copy-link-btn:hover { background: rgba(16, 185, 129, 0.25); }
+        #copy-link-btn.success {
+            background: #059669;
+            color: #fff;
+        }
+
+        #intro-overlay {
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.98));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            text-align: center;
+            transition: opacity 0.7s ease, visibility 0.7s;
+            z-index: 100;
+        }
+        #intro-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        #intro-overlay h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 0.5rem 0;
+            line-height: 1.2;
+        }
+        #intro-overlay p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            max-width: 380px;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+        #start-btn {
+            padding: 0.85rem 2rem;
+            background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+            border: none;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);
+            transition: transform 0.3s;
+        }
+        #start-btn:hover { transform: scale(1.05); }
+
+        #loading {
+            position: fixed;
+            inset: 0;
+            background: #050515;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            flex-direction: column;
+            gap: 1rem;
+            transition: opacity 0.5s;
+        }
+        #loading.hidden { opacity: 0; pointer-events: none; }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(56, 189, 248, 0.2);
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        #loading p { color: #38bdf8; font-size: 0.8rem; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.4); border-radius: 4px; }
+
+        @media (max-width: 480px) {
+            #intro-overlay h1 { font-size: 1.6rem; }
+            #main-card-display { bottom: 1rem; padding: 1rem; }
+            #photo-preview-container { height: 150px; }
+            #open-config-btn { font-size: 0.7rem; padding: 0.4rem 0.7rem; }
+        }
+
+        #interaction-hint {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(148, 163, 184, 0.7);
+            font-size: 0.75rem;
+            pointer-events: none;
+            text-align: center;
+            animation: fadeHint 4s ease forwards;
+        }
+        @keyframes fadeHint {
+            0%, 60% { opacity: 0.8; }
+            100% { opacity: 0; }
+        }
+
+        /* Toast y banner */
+        .toast {
+            position: fixed; bottom: 6rem; left: 50%; transform: translateX(-50%);
+            color: white; padding: 0.7rem 1.3rem; border-radius: 12px;
+            font-size: 0.8rem; font-weight: 600; z-index: 200;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+            animation: slideUp 0.4s ease;
+            max-width: 90vw; text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading -->
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Cargando el universo...</p>
+    </div>
+
+    <!-- Canvas 3D -->
+    <div id="canvas-container"></div>
+
+    <!-- Música -->
+    <audio id="bg-music" loop preload="none">
+        <source src="musica.mp3" type="audio/mpeg">
+    </audio>
+
+    <button id="music-btn" class="ui-element glass" aria-label="Reproducir música">
+        <i id="music-icon" class="fas fa-music"></i>
+    </button>
+
+    <!-- Hint inicial -->
+    <div id="interaction-hint" class="ui-element">
+        <i class="fas fa-hand-pointer"></i> Arrastra para explorar · Toca las flores
+    </div>
+
+    <!-- Tarjeta de recuerdos -->
+    <div id="main-card-display" class="ui-element glass">
+        <div id="photo-preview-container">
+            <img id="display-img" alt="Momento especial">
+            <div id="display-placeholder">
+                <i class="fas fa-heart"></i>
+                <p style="font-size: 0.75rem; margin: 0;">¡Toca las flores del ramo!</p>
+            </div>
+        </div>
+        <p id="display-text"></p>
+        <div style="display: flex; gap: 0.5rem; margin-top: 1rem; width: 100%;">
+            <button id="prev-btn" class="nav-btn"><i class="fas fa-chevron-left"></i> Anterior</button>
+            <button id="next-btn" class="nav-btn">Siguiente <i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <!-- Botón personalizar -->
+    <button id="open-config-btn" class="ui-element glass">
+        <i class="fas fa-cog"></i> Personalizar
+    </button>
+
+    <!-- Panel configuración -->
+    <div id="config-panel" class="ui-element glass">
+        <div>
+            <div class="config-header">
+                <h2><i class="fas fa-magic"></i> Configurador Cósmico</h2>
+                <button id="close-config-btn" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+            </div>
+
+            <p class="config-desc">
+                Sube tus fotos, escribe tus dedicatorias y genera un enlace único.
+                Cada foto se convertirá en una flor del ramo del osito. 🌸
+            </p>
+
+            <div id="inputs-container"></div>
+        </div>
+
+        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(148, 163, 184, 0.2);">
+            <button id="generate-link-btn">
+                <i class="fas fa-share-alt"></i> Generar Enlace Único
+            </button>
+
+            <div id="link-output-container">
+                <input type="text" id="generated-url" readonly>
+                <button id="copy-link-btn">
+                    <i class="fas fa-copy"></i> Copiar Enlace
+                </button>
+                <p style="font-size: 0.65rem; color: #64748b; margin-top: 0.5rem; text-align: center;">
+                    💡 El enlace guarda tus fotos y textos de forma segura.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay de inicio -->
+    <div id="intro-overlay">
+        <h1>Universo de Recuerdos</h1>
+        <p>Mueve la pantalla para explorar, enciende la música y descubre las flores de la memoria. 🐻💙🌸</p>
+        <button id="start-btn">Entrar al Universo 🚀</button>
+    </div>
+
+    <script>
+    'use strict';
+
+    // ============================================================
+    // CONFIGURACIÓN GLOBAL
+    // ============================================================
+    const CONFIG = {
+        starCount: 1200,
+        maxImageSize: 600,
+        jpegQuality: 0.7,
+        maxTextLength: 500,
+        MAX_MEMORIES: 12,
+        MIN_MEMORIES: 3,
+        colors: {
+            spaceBg: 0x050515,
+            stars: 0xffffff,
+            bearFur: 0xd4a373,
+            bearFurInner: 0xf0d5b0,
+            snout: 0xfefae0,
+            black: 0x1a1a1a,
+            flowers: 0x00d2ff,
+            flowerAlt: 0x00f5ff,
+            flowerCenter: 0xffd700,
+            stem: 0x2d6a4f,
+            leaf: 0x40916c,
+            ribbon: 0xff6b9d
+        }
+    };
+
+    let scene, camera, renderer, controls;
+    let flowerMeshes = [];
+    let userMemoryData = [];
+    let activeMemoryIndex = 0;
+    let bearGroup = null;
+    let isAnimating = true;
+    let clock;
+
+    // ============================================================
+    // INICIALIZACIÓN 3D
+    // ============================================================
+    function init3D() {
+        const container = document.getElementById('canvas-container');
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(CONFIG.colors.spaceBg);
+        scene.fog = new THREE.FogExp2(CONFIG.colors.spaceBg, 0.012);
+
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+        camera.position.set(0, 3, 22);
+
+        renderer = new THREE.WebGLRenderer({
+            antialias: window.devicePixelRatio < 2,
+            powerPreference: 'high-performance',
+            alpha: false
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+        container.appendChild(renderer.domElement);
+
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.maxDistance = 35;
+        controls.minDistance = 10;
+        controls.enablePan = false;
+        controls.rotateSpeed = 0.6;
+        controls.zoomSpeed = 0.8;
+        controls.target.set(0, 2, 0);
+
+        // Iluminación
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        const purpleLight = new THREE.PointLight(0x9333ea, 0.8, 40);
+        purpleLight.position.set(-8, 8, 8);
+        scene.add(purpleLight);
+
+        const flowerLight = new THREE.PointLight(CONFIG.colors.flowers, 1.5, 25);
+        flowerLight.position.set(0, 3, 5);
+        scene.add(flowerLight);
+
+        createStarfield();
+        createBearWithFlowers();
+
+        window.addEventListener('resize', onWindowResize);
+        renderer.domElement.addEventListener('pointerdown', onPointerDown);
+        renderer.domElement.addEventListener('pointermove', onPointerMove);
+
+        clock = new THREE.Clock();
+        animate();
+    }
+
+    // ============================================================
+    // CAMPO DE ESTRELLAS
+    // ============================================================
+    function createStarfield() {
+        const geo = new THREE.BufferGeometry();
+        const count = CONFIG.starCount;
+        const positions = new Float32Array(count * 3);
+        for (let i = 0; i < count * 3; i += 3) {
+            positions[i]     = (Math.random() - 0.5) * 150;
+            positions[i + 1] = (Math.random() - 0.5) * 150;
+            positions[i + 2] = (Math.random() - 0.5) * 150;
+        }
+        geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const mat = new THREE.PointsMaterial({
+            color: CONFIG.colors.stars,
+            size: 0.22,
+            transparent: true,
+            opacity: 0.9,
+            sizeAttenuation: true
+        });
+        scene.add(new THREE.Points(geo, mat));
+
+        // Estrellas lejanas de colores
+        const geo2 = new THREE.BufferGeometry();
+        const count2 = 400;
+        const pos2 = new Float32Array(count2 * 3);
+        const col2 = new Float32Array(count2 * 3);
+        for (let i = 0; i < count2; i++) {
+            const i3 = i * 3;
+            pos2[i3]     = (Math.random() - 0.5) * 200;
+            pos2[i3 + 1] = (Math.random() - 0.5) * 200;
+            pos2[i3 + 2] = (Math.random() - 0.5) * 200;
+            const c = new THREE.Color().setHSL(0.55 + Math.random() * 0.2, 0.8, 0.6);
+            col2[i3] = c.r; col2[i3 + 1] = c.g; col2[i3 + 2] = c.b;
+        }
+        geo2.setAttribute('position', new THREE.BufferAttribute(pos2, 3));
+        geo2.setAttribute('color', new THREE.BufferAttribute(col2, 3));
+        const mat2 = new THREE.PointsMaterial({
+            size: 0.4,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.7,
+            sizeAttenuation: true
+        });
+        scene.add(new THREE.Points(geo2, mat2));
+    }
+
+    // ============================================================
+    // OSITO CON RAMO DE FLORES
+    // ============================================================
+    function createBearWithFlowers() {
+        bearGroup = new THREE.Group();
+        bearGroup.position.set(0, -1.5, 0);
+
+        // Materiales
+        const furMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.bearFur, roughness: 0.85 });
+        const furInnerMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.bearFurInner, roughness: 0.9 });
+        const snoutMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.snout, roughness: 0.7 });
+        const blackMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.black, roughness: 0.3 });
+        const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+        const stemMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.stem, roughness: 0.8 });
+        const leafMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.leaf, roughness: 0.7 });
+        const ribbonMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.ribbon, roughness: 0.5 });
+
+        // Cuerpo
+        const body = new THREE.Mesh(new THREE.SphereGeometry(3, 32, 32), furMat);
+        body.scale.set(1, 1.15, 1);
+        bearGroup.add(body);
+
+        // Panza
+        const belly = new THREE.Mesh(new THREE.SphereGeometry(1.8, 24, 24), furInnerMat);
+        belly.position.set(0, -0.3, 2.2);
+        belly.scale.set(1, 1.1, 0.4);
+        bearGroup.add(belly);
+
+        // Cabeza
+        const head = new THREE.Mesh(new THREE.SphereGeometry(2.3, 32, 32), furMat);
+        head.position.set(0, 4.2, 0);
+        bearGroup.add(head);
+
+        // Orejas
+        const earGeo = new THREE.SphereGeometry(0.85, 24, 24);
+        const earL = new THREE.Mesh(earGeo, furMat);
+        earL.position.set(-1.9, 6, -0.1);
+        earL.scale.set(1, 1, 0.35);
+        bearGroup.add(earL);
+
+        const earLInner = new THREE.Mesh(new THREE.SphereGeometry(0.5, 20, 20), furInnerMat);
+        earLInner.position.set(-1.9, 6, 0.15);
+        earLInner.scale.set(1, 1, 0.3);
+        bearGroup.add(earLInner);
+
+        const earR = earL.clone();
+        earR.position.x = 1.9;
+        bearGroup.add(earR);
+
+        const earRInner = earLInner.clone();
+        earRInner.position.x = 1.9;
+        bearGroup.add(earRInner);
+
+        // Hocico
+        const snout = new THREE.Mesh(new THREE.SphereGeometry(0.85, 24, 24), snoutMat);
+        snout.position.set(0, 3.7, 2);
+        snout.scale.set(1.2, 0.85, 0.9);
+        bearGroup.add(snout);
+
+        // Nariz
+        const nose = new THREE.Mesh(new THREE.SphereGeometry(0.28, 20, 20), blackMat);
+        nose.position.set(0, 3.95, 2.6);
+        nose.scale.set(1.2, 0.9, 0.8);
+        bearGroup.add(nose);
+
+        // Ojos
+        const eyeGeo = new THREE.SphereGeometry(0.22, 20, 20);
+        const eyeL = new THREE.Mesh(eyeGeo, blackMat);
+        eyeL.position.set(-0.7, 4.4, 2.05);
+        bearGroup.add(eyeL);
+
+        const eyeR = eyeL.clone();
+        eyeR.position.x = 0.7;
+        bearGroup.add(eyeR);
+
+        // Brillos
+        const shineGeo = new THREE.SphereGeometry(0.08, 12, 12);
+        const shineL = new THREE.Mesh(shineGeo, whiteMat);
+        shineL.position.set(-0.65, 4.5, 2.22);
+        bearGroup.add(shineL);
+
+        const shineR = shineL.clone();
+        shineR.position.x = 0.75;
+        bearGroup.add(shineR);
+
+        // Mejillas
+        const cheekMat = new THREE.MeshStandardMaterial({ 
+            color: 0xffb3ba, transparent: true, opacity: 0.6, roughness: 1
+        });
+        const cheekGeo = new THREE.SphereGeometry(0.4, 16, 16);
+        const cheekL = new THREE.Mesh(cheekGeo, cheekMat);
+        cheekL.position.set(-1.2, 3.6, 1.85);
+        cheekL.scale.set(1, 0.7, 0.3);
+        bearGroup.add(cheekL);
+
+        const cheekR = cheekL.clone();
+        cheekR.position.x = 1.2;
+        bearGroup.add(cheekR);
+
+        // Brazos
+        const armGeo = new THREE.CapsuleGeometry(0.65, 1.8, 8, 16);
+        const armL = new THREE.Mesh(armGeo, furMat);
+        armL.position.set(-2.1, 1.2, 1.4);
+        armL.rotation.set(Math.PI / 3.5, 0, -Math.PI / 7);
+        bearGroup.add(armL);
+
+        const armR = new THREE.Mesh(armGeo, furMat);
+        armR.position.set(2.1, 1.2, 1.4);
+        armR.rotation.set(Math.PI / 3.5, 0, Math.PI / 7);
+        bearGroup.add(armR);
+
+        // Manitas
+        const pawGeo = new THREE.SphereGeometry(0.7, 20, 20);
+        const pawL = new THREE.Mesh(pawGeo, furMat);
+        pawL.position.set(-1.5, 0.4, 2.6);
+        bearGroup.add(pawL);
+
+        const pawR = new THREE.Mesh(pawGeo, furMat);
+        pawR.position.set(1.5, 0.4, 2.6);
+        bearGroup.add(pawR);
+
+        // Patas
+        const legGeo = new THREE.SphereGeometry(1.1, 20, 20);
+        const legL = new THREE.Mesh(legGeo, furMat);
+        legL.position.set(-1.4, -2.8, 0.6);
+        legL.scale.set(1, 0.65, 1.3);
+        bearGroup.add(legL);
+
+        const legR = legL.clone();
+        legR.position.x = 1.4;
+        bearGroup.add(legR);
+
+        // Almohadillas
+        const padGeo = new THREE.SphereGeometry(0.55, 16, 16);
+        const padMat = new THREE.MeshStandardMaterial({ color: 0xb08968, roughness: 0.9 });
+        const padL = new THREE.Mesh(padGeo, padMat);
+        padL.position.set(-1.4, -3, 1.4);
+        padL.scale.set(1, 0.4, 0.6);
+        bearGroup.add(padL);
+
+        const padR = padL.clone();
+        padR.position.x = 1.4;
+        bearGroup.add(padR);
+
+        // Ramo de flores
+        createBouquet(bearGroup, stemMat, leafMat, ribbonMat);
+
+        scene.add(bearGroup);
+    }
+
+    // ============================================================
+    // RAMO DE FLORES
+    // ============================================================
+    function createBouquet(parent, stemMat, leafMat, ribbonMat) {
+        flowerMeshes = [];
+
+        const bouquet = new THREE.Group();
+        bouquet.position.set(0, 3.2, 3.2);
+        bouquet.rotation.x = -0.15;
+
+        const totalFlowers = Math.max(
+            CONFIG.MIN_MEMORIES,
+            Math.min(userMemoryData.length || 3, CONFIG.MAX_MEMORIES)
+        );
+
+        const stemOrigin = new THREE.Vector3(0, -2.5, 0);
+        const positions = [];
+
+        if (totalFlowers <= 3) {
+            positions.push([-0.9, 0, 0]);
+            positions.push([0.9, 0, 0]);
+            positions.push([0, 0.9, 0.1]);
+        } else if (totalFlowers <= 6) {
+            positions.push([-1.3, 0, 0]);
+            positions.push([-0.65, 0.5, 0.1]);
+            positions.push([0, 0.9, 0.15]);
+            positions.push([0.65, 0.5, 0.1]);
+            positions.push([1.3, 0, 0]);
+            if (totalFlowers === 6) positions.push([0, -0.2, 0.3]);
+        } else {
+            const layers = [
+                { count: Math.ceil(totalFlowers / 3), radius: 1.4, yBase: 0.2, zOff: 0.1 },
+                { count: Math.ceil(totalFlowers / 3), radius: 0.9, yBase: 0.8, zOff: 0.15 },
+                { count: Math.floor(totalFlowers / 3), radius: 0.5, yBase: 1.3, zOff: 0.2 }
+            ];
+            let placed = 0;
+            for (const layer of layers) {
+                for (let i = 0; i < layer.count && placed < totalFlowers; i++, placed++) {
+                    const angle = (i / layer.count) * Math.PI * 2 + (layer.yBase * 3);
+                    positions.push([
+                        Math.cos(angle) * layer.radius,
+                        layer.yBase + Math.sin(angle) * 0.3,
+                        layer.zOff + (i % 2) * 0.15
+                    ]);
+                }
+            }
+        }
+
+        positions.forEach((pos, index) => {
+            const flower = createSingleFlower(index, leafMat);
+            flower.position.set(pos[0], pos[1], pos[2]);
+
+            // Tallo
+            const stemHeight = Math.sqrt(
+                Math.pow(pos[0] - stemOrigin.x, 2) +
+                Math.pow(pos[1] - stemOrigin.y, 2) +
+                Math.pow(pos[2] - stemOrigin.z, 2)
+            );
+            const stem = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.06, 0.08, stemHeight, 8),
+                stemMat
+            );
+
+            const midX = (pos[0] + stemOrigin.x) / 2;
+            const midY = (pos[1] + stemOrigin.y) / 2;
+            const midZ = (pos[2] + stemOrigin.z) / 2;
+            stem.position.set(midX, midY, midZ);
+
+            const dx = pos[0] - stemOrigin.x;
+            const dy = pos[1] - stemOrigin.y;
+            const dz = pos[2] - stemOrigin.z;
+            const angleZ = Math.atan2(dx, dy);
+            const angleX = -Math.atan2(dz, Math.sqrt(dx*dx + dy*dy));
+            stem.rotation.set(angleX, 0, angleZ);
+
+            bouquet.add(stem);
+            bouquet.add(flower);
+            flowerMeshes.push(flower);
+        });
+
+        // Lazo
+        const ribbonKnot = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), ribbonMat);
+        ribbonKnot.position.copy(stemOrigin).add(new THREE.Vector3(0, 0.2, 0.1));
+        bouquet.add(ribbonKnot);
+
+        const ribbonGeo = new THREE.TorusGeometry(0.5, 0.08, 8, 20);
+        const ribbonL = new THREE.Mesh(ribbonGeo, ribbonMat);
+        ribbonL.position.set(-0.5, -2.2, 0.2);
+        ribbonL.rotation.set(0.3, 0, 0.6);
+        bouquet.add(ribbonL);
+
+        const ribbonR = new THREE.Mesh(ribbonGeo, ribbonMat);
+        ribbonR.position.set(0.5, -2.2, 0.2);
+        ribbonR.rotation.set(0.3, 0, -0.6);
+        bouquet.add(ribbonR);
+
+        const ribbonTailGeo = new THREE.CylinderGeometry(0.06, 0.1, 1.2, 8);
+        const tailL = new THREE.Mesh(ribbonTailGeo, ribbonMat);
+        tailL.position.set(-0.7, -3, 0.2);
+        tailL.rotation.set(0, 0, 0.25);
+        bouquet.add(tailL);
+
+        const tailR = new THREE.Mesh(ribbonTailGeo, ribbonMat);
+        tailR.position.set(0.7, -3, 0.2);
+        tailR.rotation.set(0, 0, -0.25);
+        bouquet.add(tailR);
+
+        parent.add(bouquet);
+    }
+
+    // ============================================================
+    // FLOR INDIVIDUAL
+    // ============================================================
+    function createSingleFlower(index, leafMat) {
+        const flowerGroup = new THREE.Group();
+        flowerGroup.userData = {
+            memoryIndex: index,
+            isFlower: true,
+            pulseOffset: Math.random() * Math.PI * 2
+        };
+
+        const petalColor = index % 2 === 0 ? CONFIG.colors.flowers : CONFIG.colors.flowerAlt;
+        const petalMat = new THREE.MeshStandardMaterial({
+            color: petalColor,
+            emissive: petalColor,
+            emissiveIntensity: 0.35,
+            roughness: 0.4,
+            metalness: 0.1
+        });
+
+        // Pétalos externos
+        const petalCount = 8;
+        const petalGeo = new THREE.SphereGeometry(0.28, 16, 16);
+        for (let i = 0; i < petalCount; i++) {
+            const petal = new THREE.Mesh(petalGeo, petalMat);
+            const angle = (i / petalCount) * Math.PI * 2;
+            const radius = 0.42;
+            petal.position.set(
+                Math.cos(angle) * radius,
+                Math.sin(angle) * radius,
+                -0.02
+            );
+            petal.scale.set(1.6, 0.9, 0.5);
+            petal.rotation.z = angle;
+            flowerGroup.add(petal);
+        }
+
+        // Pétalos internos
+        const petalSmallGeo = new THREE.SphereGeometry(0.22, 16, 16);
+        for (let i = 0; i < petalCount; i++) {
+            const petal = new THREE.Mesh(petalSmallGeo, petalMat);
+            const angle = ((i + 0.5) / petalCount) * Math.PI * 2;
+            const radius = 0.3;
+            petal.position.set(
+                Math.cos(angle) * radius,
+                Math.sin(angle) * radius,
+                0.06
+            );
+            petal.scale.set(1.3, 0.85, 0.5);
+            petal.rotation.z = angle;
+            flowerGroup.add(petal);
+        }
+
+        // Centro
+        const centerMat = new THREE.MeshStandardMaterial({
+            color: CONFIG.colors.flowerCenter,
+            emissive: 0xffaa00,
+            emissiveIntensity: 0.5,
+            roughness: 0.3
+        });
+        const center = new THREE.Mesh(new THREE.SphereGeometry(0.28, 20, 20), centerMat);
+        center.position.z = 0.1;
+        flowerGroup.add(center);
+
+        // Puntos del centro
+        const dotMat = new THREE.MeshStandardMaterial({ color: 0xff8800, roughness: 0.5 });
+        const dotGeo = new THREE.SphereGeometry(0.06, 10, 10);
+        for (let i = 0; i < 6; i++) {
+            const dot = new THREE.Mesh(dotGeo, dotMat);
+            const angle = (i / 6) * Math.PI * 2;
+            dot.position.set(Math.cos(angle) * 0.15, Math.sin(angle) * 0.15, 0.28);
+            flowerGroup.add(dot);
+        }
+
+        // Hojas
+        const leafGeo = new THREE.SphereGeometry(0.3, 12, 12);
+        for (let i = 0; i < 2; i++) {
+            const leaf = new THREE.Mesh(leafGeo, leafMat);
+            const angle = i === 0 ? -0.7 : 0.7;
+            leaf.position.set(Math.sin(angle) * 0.7, -0.6, 0.05);
+            leaf.scale.set(1.3, 0.3, 0.6);
+            leaf.rotation.z = angle;
+            flowerGroup.add(leaf);
+        }
+
+        // Halo (hover)
+        const haloMat = new THREE.MeshBasicMaterial({
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 0,
+            side: THREE.BackSide
+        });
+        const halo = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 16), haloMat);
+        halo.userData.isHalo = true;
+        flowerGroup.add(halo);
+
+        // Indicador "tiene foto"
+        const indicatorMat = new THREE.MeshBasicMaterial({
+            color: 0x00ff88,
+            transparent: true,
+            opacity: 0
+        });
+        const indicator = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), indicatorMat);
+        indicator.position.set(0, 0.9, 0);
+        indicator.userData.isIndicator = true;
+        flowerGroup.add(indicator);
+
+        return flowerGroup;
+    }
+
+    // ============================================================
+    // RECREAR ESCENA CUANDO CAMBIA EL NÚMERO DE FLORES
+    // ============================================================
+    function recreateBear() {
+        if (bearGroup) {
+            scene.remove(bearGroup);
+            bearGroup = null;
+        }
+        flowerMeshes = [];
+        createBearWithFlowers();
+    }
+
+    // ============================================================
+    // BUCLE DE ANIMACIÓN
+    // ============================================================
+    function animate() {
+        requestAnimationFrame(animate);
+        if (!isAnimating) return;
+
+        const t = clock.getElapsedTime();
+
+        // Flores
+        flowerMeshes.forEach((flower, i) => {
+            const pulse = 1 + Math.sin(t * 1.5 + flower.userData.pulseOffset) * 0.05;
+            flower.scale.setScalar(pulse);
+            flower.rotation.z += 0.003;
+            flower.rotation.x = Math.sin(t + i * 0.5) * 0.1;
+
+            // Halo
+            const halo = flower.children.find(c => c.userData.isHalo);
+            if (halo) {
+                halo.material.opacity = Math.max(0, halo.material.opacity - 0.02);
+            }
+
+            // Indicador
+            const indicator = flower.children.find(c => c.userData.isIndicator);
+            if (indicator) {
+                const hasPhoto = userMemoryData[flower.userData.memoryIndex]?.img;
+                const targetOpacity = hasPhoto ? 0.9 : 0;
+                indicator.material.opacity += (targetOpacity - indicator.material.opacity) * 0.1;
+                if (hasPhoto) {
+                    indicator.position.y = 0.9 + Math.sin(t * 3 + i) * 0.05;
+                }
+            }
+        });
+
+        // Osito respiración
+        if (bearGroup) {
+            bearGroup.position.y = -1.5 + Math.sin(t * 0.8) * 0.1;
+            bearGroup.rotation.y = Math.sin(t * 0.3) * 0.08;
+        }
+
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // ============================================================
+    // RAYCASTING
+    // ============================================================
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let hoveredFlower = null;
+
+    function onPointerDown(event) {
+        if (event.target.tagName !== 'CANVAS') return;
+
+        pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+        pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(pointer, camera);
+        const intersects = raycaster.intersectObjects(flowerMeshes, true);
+
+        if (intersects.length > 0) {
+            let obj = intersects[0].object;
+            while (obj.parent && !obj.userData.isFlower) obj = obj.parent;
+
+            if (obj.userData.isFlower) {
+                openMemoryDisplay(obj.userData.memoryIndex);
+            }
+        }
+    }
+
+    function onPointerMove(event) {
+        if (event.target.tagName !== 'CANVAS') return;
+
+        pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+        pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(pointer, camera);
+        const intersects = raycaster.intersectObjects(flowerMeshes, true);
+
+        if (hoveredFlower) {
+            const halo = hoveredFlower.children.find(c => c.userData.isHalo);
+            if (halo) halo.material.opacity = 0;
+            hoveredFlower = null;
+        }
+
+        if (intersects.length > 0) {
+            let obj = intersects[0].object;
+            while (obj.parent && !obj.userData.isFlower) obj = obj.parent;
+            if (obj.userData.isFlower) {
+                hoveredFlower = obj;
+                const halo = obj.children.find(c => c.userData.isHalo);
+                if (halo) halo.material.opacity = 0.35;
+                document.body.style.cursor = 'pointer';
+            }
+        } else {
+            document.body.style.cursor = 'default';
+        }
+    }
+
+    // ============================================================
+    // COMPRESIÓN DE IMÁGENES
+    // ============================================================
+    function getCompressionSettings(totalPhotos) {
+        if (totalPhotos <= 5)  return { maxSize: 700, quality: 0.75 };
+        if (totalPhotos <= 12) return { maxSize: 600, quality: 0.7 };
+        if (totalPhotos <= 20) return { maxSize: 500, quality: 0.65 };
+        if (totalPhotos <= 30) return { maxSize: 400, quality: 0.6 };
+        return { maxSize: 350, quality: 0.55 };
+    }
+
+    function compressImage(file, settings) {
+        const { maxSize, quality } = settings || getCompressionSettings(1);
+
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let { width, height } = img;
+
+                    if (width > height && width > maxSize) {
+                        height = (height * maxSize) / width;
+                        width = maxSize;
+                    } else if (height > maxSize) {
+                        width = (width * maxSize) / height;
+                        height = maxSize;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ============================================================
+    // CONFIGURACIÓN DINÁMICA
+    // ============================================================
+    function setupConfigInputs() {
+        const container = document.getElementById('inputs-container');
+        container.innerHTML = '';
+
+        const total = userMemoryData.length || CONFIG.MIN_MEMORIES;
+
+        for (let i = 0; i < total; i++) {
+            const data = userMemoryData[i] || { img: '', text: '' };
+            const html = `
+                <div class="input-group" data-index="${i}">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                        <label style="margin:0;">
+                            🌸 Flor #${i + 1}
+                        </label>
+                        <button class="delete-memory-btn" data-index="${i}"
+                            style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3);
+                            border-radius:0.4rem; padding:0.2rem 0.5rem; font-size:0.65rem; cursor:pointer;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <input type="file" accept="image/*" id="input-file-${i}">
+                    <textarea id="input-text-${i}"
+                              maxlength="${CONFIG.maxTextLength}"
+                              placeholder="Escribe tu carta aquí...">${escapeHtml(data.text || '')}</textarea>
+                    ${data.img ? `<p style="font-size:0.65rem; color:#34d399; margin-top:0.3rem;">
+                        <i class="fas fa-check-circle"></i> Imagen cargada</p>` : ''}
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+
+            document.getElementById(`input-file-${i}`).addEventListener('change', async (e) => {
+                await handleFileUpload(e, i);
+            });
+        }
+
+        document.querySelectorAll('.delete-memory-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.currentTarget.dataset.index);
+                deleteMemory(idx);
+            });
+        });
+
+        if (total < CONFIG.MAX_MEMORIES) {
+            container.insertAdjacentHTML('beforeend', `
+                <button id="add-memory-btn" style="
+                    width:100%; padding:0.7rem; margin-top:0.5rem;
+                    background: rgba(56, 189, 248, 0.15);
+                    border: 1px dashed rgba(56, 189, 248, 0.4);
+                    border-radius: 0.6rem; color: #38bdf8;
+                    font-size: 0.8rem; font-weight: 600; cursor: pointer;
+                    transition: all 0.2s;
+                ">
+                    <i class="fas fa-plus"></i> Añadir otra flor (${total}/${CONFIG.MAX_MEMORIES})
+                </button>
+            `);
+            document.getElementById('add-memory-btn').addEventListener('click', addMemory);
+        } else {
+            container.insertAdjacentHTML('beforeend', `
+                <p style="text-align:center; font-size:0.7rem; color:#f59e0b; padding:0.5rem; margin-top:0.5rem;">
+                    <i class="fas fa-exclamation-triangle"></i> Límite máximo (${CONFIG.MAX_MEMORIES} flores)
+                </p>
+            `);
+        }
+    }
+
+    function captureCurrentInputs() {
+        const newData = [];
+        for (let i = 0; i < userMemoryData.length; i++) {
+            const textEl = document.getElementById(`input-text-${i}`);
+            const text = textEl ? textEl.value.trim() : (userMemoryData[i]?.text || '');
+            const img = userMemoryData[i]?.img || '';
+            newData.push({ img, text });
+        }
+        userMemoryData = newData;
+    }
+
+    async function handleFileUpload(e, index) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const label = e.target.previousElementSibling.querySelector('label');
+        const originalText = label.innerHTML;
+        label.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+        try {
+            const total = userMemoryData.length || CONFIG.MIN_MEMORIES;
+            const settings = getCompressionSettings(total);
+            const compressed = await compressImage(file, settings);
+
+            if (compressed.length > 200 * 1024) {
+                label.innerHTML = '⚠️ Imagen muy grande';
+                setTimeout(() => { label.innerHTML = originalText; }, 2500);
+                return;
+            }
+
+            userMemoryData[index] = userMemoryData[index] || {};
+            userMemoryData[index].img = compressed;
+
+            label.innerHTML = '✅ Imagen lista';
+            setTimeout(() => { label.innerHTML = originalText; }, 2000);
+        } catch (err) {
+            console.error('Error comprimiendo:', err);
+            label.innerHTML = '❌ Error';
+            setTimeout(() => { label.innerHTML = originalText; }, 2000);
+        }
+    }
+
+    function addMemory() {
+        if (userMemoryData.length >= CONFIG.MAX_MEMORIES) return;
+        captureCurrentInputs();
+        userMemoryData.push({ img: '', text: '' });
+        setupConfigInputs();
+        recreateBear();
+    }
+
+    function deleteMemory(index) {
+        if (userMemoryData.length <= CONFIG.MIN_MEMORIES) {
+            showToast('Debe haber al menos ' + CONFIG.MIN_MEMORIES + ' flores', 'error');
+            return;
+        }
+        if (!confirm(`¿Eliminar la flor #${index + 1}?`)) return;
+        captureCurrentInputs();
+        userMemoryData.splice(index, 1);
+        setupConfigInputs();
+        recreateBear();
+    }
+
+    // ============================================================
+    // CODIFICACIÓN URL
+    // ============================================================
+    function encodeData(data) {
+        try {
+            const json = JSON.stringify(data);
+            const utf8 = unescape(encodeURIComponent(json));
+            return btoa(utf8);
+        } catch (e) {
+            console.error('Error codificando:', e);
+            return '';
+        }
+    }
+
+    function decodeData(encoded) {
+        try {
+            const utf8 = atob(encoded);
+            const json = decodeURIComponent(escape(utf8));
+            return JSON.parse(json);
+        } catch (e) {
+            console.error('Error decodificando:', e);
+            return null;
+        }
+    }
+
+    async function loadDataFromURL() {
+        const params = new URLSearchParams(window.location.search);
+
+        // Compatibilidad: link antiguo ?u=...
+        const legacyEncoded = params.get('u');
+        if (legacyEncoded) {
+            const data = decodeData(legacyEncoded);
+            if (data && Array.isArray(data)) {
+                userMemoryData = data;
+                return;
+            }
+        }
+
+        // Nuevo: ?id=xxxxx
+        const id = params.get('id');
+        if (id) {
+            try {
+                const res = await fetch(`/api/get?id=${encodeURIComponent(id)}`);
+                if (res.ok) {
+                    const { data } = await res.json();
+                    if (Array.isArray(data) && data.length) {
+                        userMemoryData = data;
+                        showSharedBanner();
+                        return;
+                    }
+                } else if (res.status === 404) {
+                    showToast('Este recuerdo no existe o ha expirado 😢', 'error');
+                }
+            } catch (err) {
+                console.error('Error cargando recuerdo:', err);
+            }
+        }
+
+        loadDefaultData();
+    }
+
+    function loadDefaultData() {
+        userMemoryData = [
+            { img: '', text: "¡Bienvenido a nuestro universo! 🌸" },
+            { img: '', text: "Cada flor guarda un recuerdo especial." },
+            { img: '', text: "Toca las flores para ver las fotos. 💙" }
+        ];
+    }
+
+    async function generateCustomLink() {
+        captureCurrentInputs();
+
+        const btn = document.getElementById('generate-link-btn');
+        const originalHtml = btn.innerHTML;
+
+        const hasContent = userMemoryData.some(d => (d.img && d.img.length > 0) || (d.text && d.text.trim()));
+        if (!hasContent) {
+            showToast('Añade al menos una foto o texto', 'error');
+            return;
+        }
+
+        const totalSize = JSON.stringify(userMemoryData).length;
+        const sizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generando (${sizeMB} MB)...`;
+
+        try {
+            // Intentar guardar en servidor (Vercel KV)
+            const res = await fetch('/api/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: userMemoryData })
+            });
+
+            if (res.ok) {
+                const { id } = await res.json();
+                const baseUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+                const finalUrl = `${baseUrl}?id=${id}`;
+                document.getElementById('generated-url').value = finalUrl;
+                document.getElementById('link-output-container').classList.add('visible');
+                showToast('¡Link generado! 🎉', 'success');
+                return;
+            }
+            
+            // Fallback: usar Base64 en URL (si no hay API disponible)
+            console.warn('API no disponible, usando fallback Base64');
+            const encoded = encodeData(userMemoryData);
+            const baseUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+            const finalUrl = `${baseUrl}?u=${encoded}`;
+            document.getElementById('generated-url').value = finalUrl;
+            document.getElementById('link-output-container').classList.add('visible');
+            showToast('Link generado (local, más largo)', 'info');
+        } catch (err) {
+            console.error(err);
+            // Fallback con Base64
+            const encoded = encodeData(userMemoryData);
+            const baseUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+            const finalUrl = `${baseUrl}?u=${encoded}`;
+            document.getElementById('generated-url').value = finalUrl;
+            document.getElementById('link-output-container').classList.add('visible');
+            showToast('Link generado (local)', 'info');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    }
+
+    // ============================================================
+    // MOSTRAR RECUERDO
+    // ============================================================
+    function openMemoryDisplay(index) {
+        activeMemoryIndex = index;
+        const data = userMemoryData[index] || { img: '', text: '' };
+
+        const card = document.getElementById('main-card-display');
+        const imgEl = document.getElementById('display-img');
+        const placeholder = document.getElementById('display-placeholder');
+        const textEl = document.getElementById('display-text');
+
+        card.classList.add('visible');
+
+        if (data.img) {
+            imgEl.src = data.img;
+            imgEl.style.display = 'block';
+            placeholder.style.display = 'none';
+        } else {
+            imgEl.style.display = 'none';
+            placeholder.style.display = 'flex';
+        }
+
+        textEl.textContent = data.text || "Flor vacía. ¡Añade un recuerdo en la configuración!";
+    }
+
+    // ============================================================
+    // UTILIDADES
+    // ============================================================
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function showSharedBanner() {
+        const banner = document.createElement('div');
+        banner.style.cssText = `
+            position: fixed; top: 1rem; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(135deg, #0ea5e9, #9333ea);
+            color: white; padding: 0.6rem 1.2rem; border-radius: 999px;
+            font-size: 0.75rem; font-weight: 600; z-index: 100;
+            box-shadow: 0 4px 20px rgba(14,165,233,0.4);
+            animation: slideDown 0.5s ease;
+        `;
+        banner.innerHTML = '💙 Estás viendo un recuerdo compartido';
+        document.body.appendChild(banner);
+        setTimeout(() => {
+            banner.style.transition = 'opacity 0.5s';
+            banner.style.opacity = '0';
+            setTimeout(() => banner.remove(), 500);
+        }, 4000);
+    }
+
+    function showToast(msg, type = 'info') {
+        const colors = {
+            success: 'linear-gradient(135deg, #10b981, #059669)',
+            error: 'linear-gradient(135deg, #ef4444, #dc2626)',
+            info: 'linear-gradient(135deg, #0ea5e9, #3b82f6)'
+        };
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.style.background = colors[type] || colors.info;
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.transition = 'opacity 0.5s, transform 0.5s';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translate(-50%, 20px)';
+            setTimeout(() => toast.remove(), 500);
+        }, 3000);
+    }
+
+    // ============================================================
+    // EVENT LISTENERS UI
+    // ============================================================
+    document.getElementById('start-btn').addEventListener('click', () => {
+        document.getElementById('intro-overlay').classList.add('hidden');
+        const music = document.getElementById('bg-music');
+        music.volume = 0.5;
+        music.play().then(() => {
+            document.getElementById('music-icon').className = 'fas fa-volume-up';
+        }).catch(() => {});
+    });
+
+    document.getElementById('music-btn').addEventListener('click', () => {
+        const music = document.getElementById('bg-music');
+        const icon = document.getElementById('music-icon');
+        if (music.paused) {
+            music.play().then(() => {
+                icon.className = 'fas fa-volume-up';
+            }).catch(err => console.error(err));
+        } else {
+            music.pause();
+            icon.className = 'fas fa-music';
+        }
+    });
+
+    document.getElementById('open-config-btn').addEventListener('click', () => {
+        setupConfigInputs();
+        document.getElementById('config-panel').classList.add('open');
+    });
+
+    document.getElementById('close-config-btn').addEventListener('click', () => {
+        document.getElementById('config-panel').classList.remove('open');
+    });
+
+    document.getElementById('generate-link-btn').addEventListener('click', generateCustomLink);
+
+    document.getElementById('copy-link-btn').addEventListener('click', async () => {
+        const urlInput = document.getElementById('generated-url');
+        const btn = document.getElementById('copy-link-btn');
+
+        try {
+            await navigator.clipboard.writeText(urlInput.value);
+            btn.classList.add('success');
+            btn.innerHTML = '<i class="fas fa-check"></i> ¡Copiado!';
+            setTimeout(() => {
+                btn.classList.remove('success');
+                btn.innerHTML = '<i class="fas fa-copy"></i> Copiar Enlace';
+            }, 2000);
+        } catch (err) {
+            urlInput.select();
+            document.execCommand('copy');
+            btn.classList.add('success');
+            btn.innerHTML = '<i class="fas fa-check"></i> ¡Copiado!';
+            setTimeout(() => {
+                btn.classList.remove('success');
+                btn.innerHTML = '<i class="fas fa-copy"></i> Copiar Enlace';
+            }, 2000);
+        }
+    });
+
+    document.getElementById('prev-btn').addEventListener('click', () => {
+        const total = userMemoryData.length;
+        let idx = activeMemoryIndex - 1;
+        if (idx < 0) idx = total - 1;
+        openMemoryDisplay(idx);
+    });
+
+    document.getElementById('next-btn').addEventListener('click', () => {
+        const total = userMemoryData.length;
+        let idx = activeMemoryIndex + 1;
+        if (idx >= total) idx = 0;
+        openMemoryDisplay(idx);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        isAnimating = !document.hidden;
+    });
+
+    // ============================================================
+    // INICIO
+    // ============================================================
+    window.addEventListener('load', async () => {
+        await loadDataFromURL();
+        init3D();
+
+        setTimeout(() => {
+            document.getElementById('loading').classList.add('hidden');
+        }, 400);
+    });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) e.preventDefault();
+        lastTouchEnd = now;
+    }, { passive: false });
+
+    </script>
+</body>
+</html>
