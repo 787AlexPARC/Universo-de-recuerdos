@@ -6,7 +6,7 @@
     <title>Universo de Recuerdos ✨</title>
     <meta name="description" content="Un universo personalizado de recuerdos">
 
-    <!-- Three.js -->
+    <!-- Three.js r128 (estable, sin CapsuleGeometry) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <!-- FontAwesome -->
@@ -426,7 +426,6 @@
             100% { opacity: 0; }
         }
 
-        /* Toast y banner */
         .toast {
             position: fixed; bottom: 6rem; left: 50%; transform: translateX(-50%);
             color: white; padding: 0.7rem 1.3rem; border-radius: 12px;
@@ -641,7 +640,7 @@
         });
         scene.add(new THREE.Points(geo, mat));
 
-        // Estrellas lejanas de colores
+        // Estrellas de colores
         const geo2 = new THREE.BufferGeometry();
         const count2 = 400;
         const pos2 = new Float32Array(count2 * 3);
@@ -765,8 +764,8 @@
         cheekR.position.x = 1.2;
         bearGroup.add(cheekR);
 
-        // Brazos
-        const armGeo = new THREE.CapsuleGeometry(0.65, 1.8, 8, 16);
+        // ⚠️ Brazo: cilindro (CapsuleGeometry NO existe en r128)
+        const armGeo = new THREE.CylinderGeometry(0.65, 0.65, 2.6, 16);
         const armL = new THREE.Mesh(armGeo, furMat);
         armL.position.set(-2.1, 1.2, 1.4);
         armL.rotation.set(Math.PI / 3.5, 0, -Math.PI / 7);
@@ -810,7 +809,7 @@
         padR.position.x = 1.4;
         bearGroup.add(padR);
 
-        // Ramo de flores
+        // Ramo
         createBouquet(bearGroup, stemMat, leafMat, ribbonMat);
 
         scene.add(bearGroup);
@@ -1037,7 +1036,7 @@
     }
 
     // ============================================================
-    // RECREAR ESCENA CUANDO CAMBIA EL NÚMERO DE FLORES
+    // RECREAR ESCENA
     // ============================================================
     function recreateBear() {
         if (bearGroup) {
@@ -1057,20 +1056,17 @@
 
         const t = clock.getElapsedTime();
 
-        // Flores
         flowerMeshes.forEach((flower, i) => {
             const pulse = 1 + Math.sin(t * 1.5 + flower.userData.pulseOffset) * 0.05;
             flower.scale.setScalar(pulse);
             flower.rotation.z += 0.003;
             flower.rotation.x = Math.sin(t + i * 0.5) * 0.1;
 
-            // Halo
             const halo = flower.children.find(c => c.userData.isHalo);
             if (halo) {
                 halo.material.opacity = Math.max(0, halo.material.opacity - 0.02);
             }
 
-            // Indicador
             const indicator = flower.children.find(c => c.userData.isIndicator);
             if (indicator) {
                 const hasPhoto = userMemoryData[flower.userData.memoryIndex]?.img;
@@ -1082,7 +1078,6 @@
             }
         });
 
-        // Osito respiración
         if (bearGroup) {
             bearGroup.position.y = -1.5 + Math.sin(t * 0.8) * 0.1;
             bearGroup.rotation.y = Math.sin(t * 0.3) * 0.08;
@@ -1198,7 +1193,7 @@
     }
 
     // ============================================================
-    // CONFIGURACIÓN DINÁMICA
+    // CONFIGURACIÓN
     // ============================================================
     function setupConfigInputs() {
         const container = document.getElementById('inputs-container');
@@ -1355,7 +1350,6 @@
     async function loadDataFromURL() {
         const params = new URLSearchParams(window.location.search);
 
-        // Compatibilidad: link antiguo ?u=...
         const legacyEncoded = params.get('u');
         if (legacyEncoded) {
             const data = decodeData(legacyEncoded);
@@ -1365,7 +1359,6 @@
             }
         }
 
-        // Nuevo: ?id=xxxxx
         const id = params.get('id');
         if (id) {
             try {
@@ -1415,7 +1408,6 @@
         btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generando (${sizeMB} MB)...`;
 
         try {
-            // Intentar guardar en servidor (Vercel KV)
             const res = await fetch('/api/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1431,18 +1423,16 @@
                 showToast('¡Link generado! 🎉', 'success');
                 return;
             }
-            
-            // Fallback: usar Base64 en URL (si no hay API disponible)
+
             console.warn('API no disponible, usando fallback Base64');
             const encoded = encodeData(userMemoryData);
             const baseUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
             const finalUrl = `${baseUrl}?u=${encoded}`;
             document.getElementById('generated-url').value = finalUrl;
             document.getElementById('link-output-container').classList.add('visible');
-            showToast('Link generado (local, más largo)', 'info');
+            showToast('Link generado (local)', 'info');
         } catch (err) {
             console.error(err);
-            // Fallback con Base64
             const encoded = encodeData(userMemoryData);
             const baseUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
             const finalUrl = `${baseUrl}?u=${encoded}`;
@@ -1610,17 +1600,39 @@
     });
 
     // ============================================================
-    // INICIO
+    // INICIO CON TRY/CATCH
     // ============================================================
     window.addEventListener('load', async () => {
-        await loadDataFromURL();
-        init3D();
+        try {
+            await loadDataFromURL();
+            init3D();
 
-        setTimeout(() => {
-            document.getElementById('loading').classList.add('hidden');
-        }, 400);
+            setTimeout(() => {
+                const loading = document.getElementById('loading');
+                if (loading) loading.classList.add('hidden');
+            }, 400);
+        } catch (error) {
+            console.error('❌ Error al inicializar:', error);
+
+            // Mostrar el error en pantalla
+            const loading = document.getElementById('loading');
+            if (loading) {
+                loading.innerHTML = `
+                    <div style="color:#ef4444; text-align:center; padding:2rem; max-width:500px;">
+                        <h2 style="margin-bottom:1rem;">⚠️ Error al cargar</h2>
+                        <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:1rem;">
+                            ${error.message || 'Error desconocido'}
+                        </p>
+                        <button onclick="location.reload()" style="background:#0ea5e9; color:#fff; border:none; padding:0.6rem 1.2rem; border-radius:8px; cursor:pointer; margin-top:1rem;">
+                            Reintentar
+                        </button>
+                    </div>
+                `;
+            }
+        }
     });
 
+    // Prevenir zoom en doble tap
     let lastTouchEnd = 0;
     document.addEventListener('touchend', (e) => {
         const now = Date.now();
