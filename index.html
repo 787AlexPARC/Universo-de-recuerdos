@@ -6,20 +6,15 @@
     <title>Universo de Recuerdos ✨</title>
     <meta name="description" content="Un universo personalizado de recuerdos">
 
-    <!-- Three.js r128 (estable, sin CapsuleGeometry) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
+            margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: #050515;
@@ -27,16 +22,8 @@
             user-select: none;
         }
 
-        #canvas-container {
-            position: fixed;
-            inset: 0;
-            z-index: 1;
-        }
-
-        .ui-element {
-            z-index: 10;
-            position: fixed;
-        }
+        #canvas-container { position: fixed; inset: 0; z-index: 1; }
+        .ui-element { z-index: 10; position: fixed; }
 
         .glass {
             background: rgba(15, 23, 42, 0.7);
@@ -46,200 +33,182 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
 
-        .neon-glow {
-            text-shadow: 0 0 10px rgba(56, 189, 248, 0.6),
-                         0 0 20px rgba(147, 51, 234, 0.4);
-        }
-
         #music-btn {
-            top: 1rem;
-            right: 1rem;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #38bdf8;
-            border: 1px solid rgba(56, 189, 248, 0.3);
-            cursor: pointer;
-            transition: all 0.3s;
+            top: 1rem; right: 1rem; width: 48px; height: 48px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);
+            cursor: pointer; transition: all 0.3s;
         }
         #music-btn:hover { color: #7dd3fc; transform: scale(1.05); }
 
-        #main-card-display {
-            bottom: 1.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 420px;
-            padding: 1.25rem;
-            border-radius: 1rem;
+        .card-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 50;
             display: none;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            transition: all 0.4s ease;
+            align-items: center; justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            transition: opacity 0.4s ease;
         }
-        #main-card-display.visible {
-            display: flex;
-            animation: slideUp 0.4s ease;
+        .card-overlay.visible { display: flex; opacity: 1; }
+
+        .card-modal {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
+            border: 2px solid rgba(56, 189, 248, 0.4);
+            border-radius: 1.25rem;
+            padding: 1.25rem;
+            max-width: 400px; width: 100%;
+            max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(56, 189, 248, 0.3);
+            position: relative;
+            transform: scale(0.7) rotateY(90deg);
+            opacity: 0;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s;
         }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translate(-50%, 20px); }
-            to { opacity: 1; transform: translate(-50%, 0); }
-        }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translate(-50%, -20px); }
-            to { opacity: 1; transform: translate(-50%, 0); }
+        .card-overlay.visible .card-modal {
+            transform: scale(1) rotateY(0deg);
+            opacity: 1;
         }
 
-        #photo-preview-container {
-            width: 100%;
-            height: 180px;
-            border-radius: 0.75rem;
-            overflow: hidden;
+        .card-close-btn {
+            position: absolute; top: 0.75rem; right: 0.75rem;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #f87171;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.25s;
+            z-index: 5;
+        }
+        .card-close-btn:hover {
+            background: rgba(239, 68, 68, 0.5);
+            color: #fff;
+            transform: rotate(90deg) scale(1.15);
+        }
+
+        .card-title {
+            font-size: 0.75rem; color: #38bdf8;
+            text-transform: uppercase; letter-spacing: 1.5px;
+            font-weight: 700; text-align: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .card-photo-wrapper {
+            width: 100%; aspect-ratio: 4/3;
+            border-radius: 0.75rem; overflow: hidden;
             margin-bottom: 1rem;
             background: #0f172a;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            border: 1px solid rgba(56, 189, 248, 0.2);
-        }
-
-        #display-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none;
-        }
-
-        #display-placeholder {
-            color: #64748b;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 1rem;
-        }
-        #display-placeholder i {
-            font-size: 2rem;
-            color: rgba(56, 189, 248, 0.5);
-            margin-bottom: 0.5rem;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        #display-text {
-            font-size: 0.875rem;
-            color: #e2e8f0;
-            font-style: italic;
-            min-height: 40px;
-            padding: 0 0.5rem;
-            line-height: 1.4;
-        }
-
-        .nav-btn {
-            flex: 1;
-            padding: 0.4rem;
-            border-radius: 0.5rem;
-            background: rgba(8, 47, 73, 0.5);
-            color: #38bdf8;
-            font-size: 0.75rem;
             border: 1px solid rgba(56, 189, 248, 0.3);
-            cursor: pointer;
-            transition: all 0.2s;
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
         }
-        .nav-btn:hover { background: rgba(12, 74, 110, 0.6); color: #7dd3fc; }
+        .card-photo-wrapper img {
+            width: 100%; height: 100%;
+            object-fit: cover; display: block;
+        }
+        .card-photo-placeholder {
+            color: #64748b; text-align: center; padding: 1rem;
+            display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+        }
+        .card-photo-placeholder i { font-size: 2.5rem; color: rgba(56, 189, 248, 0.5); }
+
+        .card-message {
+            font-size: 0.9rem; color: #e2e8f0;
+            font-style: italic; line-height: 1.5;
+            text-align: center;
+            padding: 0.85rem;
+            background: rgba(56, 189, 248, 0.05);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(56, 189, 248, 0.15);
+            min-height: 60px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .card-nav {
+            display: flex; gap: 0.5rem;
+            margin-top: 1rem; width: 100%;
+        }
+        .card-nav button {
+            flex: 1; padding: 0.5rem;
+            border-radius: 0.5rem;
+            background: rgba(56, 189, 248, 0.1);
+            color: #38bdf8; font-size: 0.75rem;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .card-nav button:hover {
+            background: rgba(56, 189, 248, 0.25);
+            color: #7dd3fc;
+        }
 
         #open-config-btn {
-            bottom: 1rem;
-            left: 1rem;
+            bottom: 1rem; left: 1rem;
             padding: 0.5rem 0.9rem;
             border-radius: 0.75rem;
-            font-size: 0.75rem;
-            color: #7dd3fc;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            font-size: 0.75rem; color: #7dd3fc;
+            display: flex; align-items: center; gap: 0.5rem;
             border: 1px solid rgba(56, 189, 248, 0.2);
-            cursor: pointer;
-            transition: all 0.3s;
+            cursor: pointer; transition: all 0.3s;
         }
         #open-config-btn:hover { color: #fff; transform: translateY(-2px); }
         #open-config-btn i { animation: spin 8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         #config-panel {
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 100%;
-            max-width: 420px;
+            top: 0; left: 0; height: 100%;
+            width: 100%; max-width: 420px;
             padding: 1.5rem;
             transform: translateX(-100%);
             transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
-            display: flex;
-            flex-direction: column;
+            display: flex; flex-direction: column;
             justify-content: space-between;
             border-right: 1px solid rgba(56, 189, 248, 0.2);
         }
         #config-panel.open { transform: translateX(0); }
 
         .config-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 1.5rem;
         }
         .config-header h2 {
-            font-size: 1.1rem;
-            color: #38bdf8;
-            margin: 0;
-            font-weight: 700;
+            font-size: 1.1rem; color: #38bdf8;
+            margin: 0; font-weight: 700;
         }
         #close-config-btn {
-            background: transparent;
-            border: none;
-            color: #94a3b8;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: color 0.2s;
+            background: transparent; border: none;
+            color: #94a3b8; cursor: pointer;
+            font-size: 1.2rem; transition: color 0.2s;
         }
         #close-config-btn:hover { color: #fff; }
 
         .config-desc {
-            font-size: 0.75rem;
-            color: #94a3b8;
-            margin-bottom: 1rem;
-            line-height: 1.5;
+            font-size: 0.75rem; color: #94a3b8;
+            margin-bottom: 1rem; line-height: 1.5;
         }
 
         .input-group {
             background: rgba(8, 47, 73, 0.3);
             border: 1px solid rgba(56, 189, 248, 0.15);
             border-radius: 0.75rem;
-            padding: 0.75rem;
-            margin-bottom: 0.75rem;
+            padding: 0.75rem; margin-bottom: 0.75rem;
         }
         .input-group label {
-            display: block;
-            font-size: 0.7rem;
-            color: #38bdf8;
-            font-weight: 600;
+            display: block; font-size: 0.7rem;
+            color: #38bdf8; font-weight: 600;
             margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
         .input-group input[type="file"] {
-            width: 100%;
-            font-size: 0.7rem;
-            color: #cbd5e1;
-            margin-bottom: 0.5rem;
+            width: 100%; font-size: 0.7rem;
+            color: #cbd5e1; margin-bottom: 0.5rem;
         }
         .input-group input[type="file"]::file-selector-button {
             background: rgba(56, 189, 248, 0.2);
@@ -247,8 +216,7 @@
             border: 1px solid rgba(56, 189, 248, 0.3);
             padding: 0.35rem 0.7rem;
             border-radius: 0.4rem;
-            font-size: 0.7rem;
-            cursor: pointer;
+            font-size: 0.7rem; cursor: pointer;
             margin-right: 0.5rem;
         }
         .input-group textarea {
@@ -256,29 +224,20 @@
             background: rgba(2, 6, 23, 0.6);
             border: 1px solid rgba(56, 189, 248, 0.2);
             border-radius: 0.4rem;
-            padding: 0.5rem;
-            font-size: 0.75rem;
-            color: #e2e8f0;
-            resize: vertical;
-            min-height: 50px;
-            font-family: inherit;
+            padding: 0.5rem; font-size: 0.75rem;
+            color: #e2e8f0; resize: vertical;
+            min-height: 50px; font-family: inherit;
         }
         .input-group textarea:focus { outline: none; border-color: #38bdf8; }
 
         #generate-link-btn {
             width: 100%;
             background: linear-gradient(135deg, #0ea5e9, #9333ea);
-            color: #fff;
-            font-weight: 600;
-            padding: 0.75rem;
-            border-radius: 0.75rem;
-            border: none;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            color: #fff; font-weight: 600;
+            padding: 0.75rem; border-radius: 0.75rem;
+            border: none; font-size: 0.85rem;
+            cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
             gap: 0.5rem;
             box-shadow: 0 4px 16px rgba(14, 165, 233, 0.3);
         }
@@ -287,14 +246,11 @@
             box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5);
         }
         #generate-link-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
+            opacity: 0.6; cursor: not-allowed; transform: none;
         }
 
         #link-output-container {
-            margin-top: 0.75rem;
-            display: none;
+            margin-top: 0.75rem; display: none;
         }
         #link-output-container.visible { display: block; }
 
@@ -303,10 +259,8 @@
             background: rgba(2, 6, 23, 0.8);
             border: 1px solid rgba(16, 185, 129, 0.3);
             border-radius: 0.5rem;
-            padding: 0.5rem;
-            font-size: 0.7rem;
-            color: #34d399;
-            margin-bottom: 0.5rem;
+            padding: 0.5rem; font-size: 0.7rem;
+            color: #34d399; margin-bottom: 0.5rem;
             font-family: monospace;
         }
 
@@ -315,84 +269,60 @@
             background: rgba(16, 185, 129, 0.15);
             color: #34d399;
             border: 1px solid rgba(16, 185, 129, 0.3);
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
+            padding: 0.5rem; border-radius: 0.5rem;
+            font-size: 0.75rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
         }
         #copy-link-btn:hover { background: rgba(16, 185, 129, 0.25); }
-        #copy-link-btn.success {
-            background: #059669;
-            color: #fff;
-        }
+        #copy-link-btn.success { background: #059669; color: #fff; }
 
         #intro-overlay {
             inset: 0;
             background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.98));
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-            text-align: center;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 1.5rem; text-align: center;
             transition: opacity 0.7s ease, visibility 0.7s;
             z-index: 100;
         }
         #intro-overlay.hidden {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
+            opacity: 0; visibility: hidden; pointer-events: none;
         }
 
         #intro-overlay h1 {
-            font-size: 2rem;
-            font-weight: 800;
+            font-size: 2rem; font-weight: 800;
             background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin: 0 0 0.5rem 0;
-            line-height: 1.2;
+            margin: 0 0 0.5rem 0; line-height: 1.2;
         }
         #intro-overlay p {
-            color: #94a3b8;
-            font-size: 0.9rem;
-            max-width: 380px;
-            margin-bottom: 1.5rem;
+            color: #94a3b8; font-size: 0.9rem;
+            max-width: 380px; margin-bottom: 1.5rem;
             line-height: 1.5;
         }
         #start-btn {
             padding: 0.85rem 2rem;
             background: linear-gradient(135deg, #0ea5e9, #3b82f6);
-            border: none;
-            border-radius: 999px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: #fff;
-            cursor: pointer;
+            border: none; border-radius: 999px;
+            font-weight: 700; font-size: 0.9rem;
+            color: #fff; cursor: pointer;
             box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);
             transition: transform 0.3s;
         }
         #start-btn:hover { transform: scale(1.05); }
 
         #loading {
-            position: fixed;
-            inset: 0;
+            position: fixed; inset: 0;
             background: #050515;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-            flex-direction: column;
-            gap: 1rem;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 200; flex-direction: column; gap: 1rem;
             transition: opacity 0.5s;
         }
         #loading.hidden { opacity: 0; pointer-events: none; }
         .spinner {
-            width: 40px;
-            height: 40px;
+            width: 40px; height: 40px;
             border: 3px solid rgba(56, 189, 248, 0.2);
             border-top-color: #38bdf8;
             border-radius: 50%;
@@ -406,19 +336,16 @@
 
         @media (max-width: 480px) {
             #intro-overlay h1 { font-size: 1.6rem; }
-            #main-card-display { bottom: 1rem; padding: 1rem; }
-            #photo-preview-container { height: 150px; }
             #open-config-btn { font-size: 0.7rem; padding: 0.4rem 0.7rem; }
+            .card-modal { padding: 1rem; }
         }
 
         #interaction-hint {
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             color: rgba(148, 163, 184, 0.7);
             font-size: 0.75rem;
-            pointer-events: none;
-            text-align: center;
+            pointer-events: none; text-align: center;
             animation: fadeHint 4s ease forwards;
         }
         @keyframes fadeHint {
@@ -427,27 +354,34 @@
         }
 
         .toast {
-            position: fixed; bottom: 6rem; left: 50%; transform: translateX(-50%);
-            color: white; padding: 0.7rem 1.3rem; border-radius: 12px;
-            font-size: 0.8rem; font-weight: 600; z-index: 200;
+            position: fixed; bottom: 6rem; left: 50%;
+            transform: translateX(-50%);
+            color: white; padding: 0.7rem 1.3rem;
+            border-radius: 12px; font-size: 0.8rem;
+            font-weight: 600; z-index: 200;
             box-shadow: 0 6px 24px rgba(0,0,0,0.3);
             animation: slideUp 0.4s ease;
             max-width: 90vw; text-align: center;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translate(-50%, 20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translate(-50%, -20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
         }
     </style>
 </head>
 <body>
 
-    <!-- Loading -->
     <div id="loading">
         <div class="spinner"></div>
         <p>Cargando el universo...</p>
     </div>
 
-    <!-- Canvas 3D -->
     <div id="canvas-container"></div>
 
-    <!-- Música -->
     <audio id="bg-music" loop preload="none">
         <source src="musica.mp3" type="audio/mpeg">
     </audio>
@@ -456,33 +390,39 @@
         <i id="music-icon" class="fas fa-music"></i>
     </button>
 
-    <!-- Hint inicial -->
     <div id="interaction-hint" class="ui-element">
-        <i class="fas fa-hand-pointer"></i> Arrastra para explorar · Toca las flores
+        <i class="fas fa-hand-pointer"></i> Arrastra para girar · Toca las fotos
     </div>
 
-    <!-- Tarjeta de recuerdos -->
-    <div id="main-card-display" class="ui-element glass">
-        <div id="photo-preview-container">
-            <img id="display-img" alt="Momento especial">
-            <div id="display-placeholder">
-                <i class="fas fa-heart"></i>
-                <p style="font-size: 0.75rem; margin: 0;">¡Toca las flores del ramo!</p>
+    <div id="card-overlay" class="card-overlay">
+        <div class="card-modal">
+            <button class="card-close-btn" id="card-close-btn" aria-label="Cerrar">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="card-title" id="card-title">Recuerdo #1</div>
+
+            <div class="card-photo-wrapper">
+                <img id="card-img" alt="Momento especial">
+                <div class="card-photo-placeholder" id="card-placeholder">
+                    <i class="fas fa-image"></i>
+                    <p style="font-size: 0.75rem; margin: 0;">Sin foto</p>
+                </div>
+            </div>
+
+            <div class="card-message" id="card-message"></div>
+
+            <div class="card-nav">
+                <button id="card-prev"><i class="fas fa-chevron-left"></i> Anterior</button>
+                <button id="card-next">Siguiente <i class="fas fa-chevron-right"></i></button>
             </div>
         </div>
-        <p id="display-text"></p>
-        <div style="display: flex; gap: 0.5rem; margin-top: 1rem; width: 100%;">
-            <button id="prev-btn" class="nav-btn"><i class="fas fa-chevron-left"></i> Anterior</button>
-            <button id="next-btn" class="nav-btn">Siguiente <i class="fas fa-chevron-right"></i></button>
-        </div>
     </div>
 
-    <!-- Botón personalizar -->
     <button id="open-config-btn" class="ui-element glass">
         <i class="fas fa-cog"></i> Personalizar
     </button>
 
-    <!-- Panel configuración -->
     <div id="config-panel" class="ui-element glass">
         <div>
             <div class="config-header">
@@ -492,7 +432,7 @@
 
             <p class="config-desc">
                 Sube tus fotos, escribe tus dedicatorias y genera un enlace único.
-                Cada foto se convertirá en una flor del ramo del osito. 🌸
+                Cada foto girará en una órbita del universo. 🪐
             </p>
 
             <div id="inputs-container"></div>
@@ -515,10 +455,9 @@
         </div>
     </div>
 
-    <!-- Overlay de inicio -->
     <div id="intro-overlay">
         <h1>Universo de Recuerdos</h1>
-        <p>Mueve la pantalla para explorar, enciende la música y descubre las flores de la memoria. 🐻💙🌸</p>
+        <p>Gira el espacio, toca las fotos flotantes y descubre cada recuerdo. 🐻💙🪐</p>
         <button id="start-btn">Entrar al Universo 🚀</button>
     </div>
 
@@ -547,17 +486,22 @@
             flowerCenter: 0xffd700,
             stem: 0x2d6a4f,
             leaf: 0x40916c,
-            ribbon: 0xff6b9d
+            ribbon: 0xff6b9d,
+            photoFrames: [0x00ffff, 0xffd700, 0xff66cc, 0x9333ea, 0x22d3ee, 0xffaa00]
         }
     };
 
     let scene, camera, renderer, controls;
-    let flowerMeshes = [];
+    let photoSprites = [];
+    let orbitRings = [];
     let userMemoryData = [];
     let activeMemoryIndex = 0;
     let bearGroup = null;
     let isAnimating = true;
     let clock;
+    let raycaster, pointer;
+    let hoveredPhoto = null;
+    let photoTextures = {};
 
     // ============================================================
     // INICIALIZACIÓN 3D
@@ -567,10 +511,10 @@
 
         scene = new THREE.Scene();
         scene.background = new THREE.Color(CONFIG.colors.spaceBg);
-        scene.fog = new THREE.FogExp2(CONFIG.colors.spaceBg, 0.012);
+        scene.fog = new THREE.FogExp2(CONFIG.colors.spaceBg, 0.006);
 
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
-        camera.position.set(0, 3, 22);
+        camera.position.set(0, 8, 38);
 
         renderer = new THREE.WebGLRenderer({
             antialias: window.devicePixelRatio < 2,
@@ -584,30 +528,37 @@
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.08;
-        controls.maxDistance = 35;
-        controls.minDistance = 10;
+        controls.maxDistance = 60;
+        controls.minDistance = 15;
         controls.enablePan = false;
         controls.rotateSpeed = 0.6;
         controls.zoomSpeed = 0.8;
-        controls.target.set(0, 2, 0);
+        controls.target.set(0, 3, 0);
 
         // Iluminación
-        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
         dirLight.position.set(10, 20, 10);
         scene.add(dirLight);
 
-        const purpleLight = new THREE.PointLight(0x9333ea, 0.8, 40);
-        purpleLight.position.set(-8, 8, 8);
+        const purpleLight = new THREE.PointLight(0x9333ea, 1.2, 70);
+        purpleLight.position.set(-12, 10, 12);
         scene.add(purpleLight);
 
-        const flowerLight = new THREE.PointLight(CONFIG.colors.flowers, 1.5, 25);
-        flowerLight.position.set(0, 3, 5);
-        scene.add(flowerLight);
+        const cyanLight = new THREE.PointLight(0x00d2ff, 0.9, 70);
+        cyanLight.position.set(12, -5, -12);
+        scene.add(cyanLight);
+
+        const goldLight = new THREE.PointLight(0xffd700, 0.6, 50);
+        goldLight.position.set(0, 8, 0);
+        scene.add(goldLight);
 
         createStarfield();
         createBearWithFlowers();
+        createFloatingPhotos();
+
+        raycaster = new THREE.Raycaster();
+        pointer = new THREE.Vector2();
 
         window.addEventListener('resize', onWindowResize);
         renderer.domElement.addEventListener('pointerdown', onPointerDown);
@@ -625,54 +576,146 @@
         const count = CONFIG.starCount;
         const positions = new Float32Array(count * 3);
         for (let i = 0; i < count * 3; i += 3) {
-            positions[i]     = (Math.random() - 0.5) * 150;
-            positions[i + 1] = (Math.random() - 0.5) * 150;
-            positions[i + 2] = (Math.random() - 0.5) * 150;
+            positions[i]     = (Math.random() - 0.5) * 180;
+            positions[i + 1] = (Math.random() - 0.5) * 180;
+            positions[i + 2] = (Math.random() - 0.5) * 180;
         }
         geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
         const mat = new THREE.PointsMaterial({
             color: CONFIG.colors.stars,
-            size: 0.22,
+            size: 0.25,
             transparent: true,
             opacity: 0.9,
             sizeAttenuation: true
         });
         scene.add(new THREE.Points(geo, mat));
 
-        // Estrellas de colores
         const geo2 = new THREE.BufferGeometry();
         const count2 = 400;
         const pos2 = new Float32Array(count2 * 3);
         const col2 = new Float32Array(count2 * 3);
         for (let i = 0; i < count2; i++) {
             const i3 = i * 3;
-            pos2[i3]     = (Math.random() - 0.5) * 200;
-            pos2[i3 + 1] = (Math.random() - 0.5) * 200;
-            pos2[i3 + 2] = (Math.random() - 0.5) * 200;
+            pos2[i3]     = (Math.random() - 0.5) * 220;
+            pos2[i3 + 1] = (Math.random() - 0.5) * 220;
+            pos2[i3 + 2] = (Math.random() - 0.5) * 220;
             const c = new THREE.Color().setHSL(0.55 + Math.random() * 0.2, 0.8, 0.6);
             col2[i3] = c.r; col2[i3 + 1] = c.g; col2[i3 + 2] = c.b;
         }
         geo2.setAttribute('position', new THREE.BufferAttribute(pos2, 3));
         geo2.setAttribute('color', new THREE.BufferAttribute(col2, 3));
         const mat2 = new THREE.PointsMaterial({
-            size: 0.4,
+            size: 0.45,
             vertexColors: true,
             transparent: true,
-            opacity: 0.7,
+            opacity: 0.75,
             sizeAttenuation: true
         });
         scene.add(new THREE.Points(geo2, mat2));
     }
 
     // ============================================================
-    // OSITO CON RAMO DE FLORES
+    // OSITO SOBRE UN PLANETA
     // ============================================================
     function createBearWithFlowers() {
         bearGroup = new THREE.Group();
-        bearGroup.position.set(0, -1.5, 0);
+        bearGroup.position.set(0, 1.5, 0);
+        bearGroup.scale.setScalar(0.9);
 
-        // Materiales
+        const planetGroup = new THREE.Group();
+        planetGroup.position.set(0, -4.5, 0);
+
+        const planetMat = new THREE.MeshStandardMaterial({
+            color: 0x4c1d95,
+            emissive: 0x7c3aed,
+            emissiveIntensity: 0.5,
+            roughness: 0.6,
+            metalness: 0.3
+        });
+        const planet = new THREE.Mesh(new THREE.SphereGeometry(4.5, 64, 64), planetMat);
+        planetGroup.add(planet);
+
+        const atmoMat = new THREE.MeshBasicMaterial({
+            color: 0xc084fc,
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.BackSide
+        });
+        const atmo = new THREE.Mesh(new THREE.SphereGeometry(4.9, 48, 48), atmoMat);
+        planetGroup.add(atmo);
+
+        const atmo2Mat = new THREE.MeshBasicMaterial({
+            color: 0x9333ea,
+            transparent: true,
+            opacity: 0.1,
+            side: THREE.BackSide
+        });
+        const atmo2 = new THREE.Mesh(new THREE.SphereGeometry(5.4, 48, 48), atmo2Mat);
+        planetGroup.add(atmo2);
+
+        // Anillo del planeta (abajo)
+        const ringGeo = new THREE.TorusGeometry(6.5, 0.18, 24, 128);
+        const ringMat = new THREE.MeshStandardMaterial({
+            color: 0xffd700,
+            emissive: 0xffaa00,
+            emissiveIntensity: 1.2,
+            roughness: 0.2,
+            metalness: 0.8,
+            transparent: true,
+            opacity: 0.9
+        });
+        const planetRing = new THREE.Mesh(ringGeo, ringMat);
+        planetRing.rotation.x = Math.PI / 2.3;
+        planetRing.rotation.z = 0.15;
+        planetGroup.add(planetRing);
+
+        const ring2Geo = new THREE.TorusGeometry(7.5, 0.1, 16, 128);
+        const ring2Mat = new THREE.MeshBasicMaterial({
+            color: 0x00d2ff,
+            transparent: true,
+            opacity: 0.5
+        });
+        const planetRing2 = new THREE.Mesh(ring2Geo, ring2Mat);
+        planetRing2.rotation.x = Math.PI / 2.3;
+        planetRing2.rotation.z = 0.15;
+        planetGroup.add(planetRing2);
+
+        const particleCount = 80;
+        const particlePositions = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (i / particleCount) * Math.PI * 2;
+            const r = 6.5 + Math.random() * 1.5;
+            particlePositions[i * 3]     = Math.cos(angle) * r;
+            particlePositions[i * 3 + 1] = (Math.random() - 0.5) * 0.5;
+            particlePositions[i * 3 + 2] = Math.sin(angle) * r;
+        }
+        const particleGeo = new THREE.BufferGeometry();
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        const particleMat = new THREE.PointsMaterial({
+            color: 0xffd700,
+            size: 0.15,
+            transparent: true,
+            opacity: 0.9,
+            sizeAttenuation: true
+        });
+        const particles = new THREE.Points(particleGeo, particleMat);
+        planetGroup.add(particles);
+        planetGroup.userData.particles = particles;
+
+        const haloMat = new THREE.MeshBasicMaterial({
+            color: 0x9333ea,
+            transparent: true,
+            opacity: 0.18,
+            side: THREE.BackSide
+        });
+        const halo = new THREE.Mesh(new THREE.SphereGeometry(5.2, 32, 32), haloMat);
+        planetGroup.add(halo);
+        planetGroup.userData.halo = halo;
+
+        bearGroup.add(planetGroup);
+        bearGroup.userData.planetGroup = planetGroup;
+
         const furMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.bearFur, roughness: 0.85 });
         const furInnerMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.bearFurInner, roughness: 0.9 });
         const snoutMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.snout, roughness: 0.7 });
@@ -682,369 +725,619 @@
         const leafMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.leaf, roughness: 0.7 });
         const ribbonMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.ribbon, roughness: 0.5 });
 
-        // Cuerpo
-        const body = new THREE.Mesh(new THREE.SphereGeometry(3, 32, 32), furMat);
+        const body = new THREE.Mesh(new THREE.SphereGeometry(2.8, 32, 32), furMat);
         body.scale.set(1, 1.15, 1);
         bearGroup.add(body);
 
-        // Panza
-        const belly = new THREE.Mesh(new THREE.SphereGeometry(1.8, 24, 24), furInnerMat);
-        belly.position.set(0, -0.3, 2.2);
+        const belly = new THREE.Mesh(new THREE.SphereGeometry(1.7, 24, 24), furInnerMat);
+        belly.position.set(0, -0.3, 2.05);
         belly.scale.set(1, 1.1, 0.4);
         bearGroup.add(belly);
 
-        // Cabeza
-        const head = new THREE.Mesh(new THREE.SphereGeometry(2.3, 32, 32), furMat);
-        head.position.set(0, 4.2, 0);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(2.15, 32, 32), furMat);
+        head.position.set(0, 3.9, 0);
         bearGroup.add(head);
 
-        // Orejas
-        const earGeo = new THREE.SphereGeometry(0.85, 24, 24);
+        const earGeo = new THREE.SphereGeometry(0.8, 24, 24);
         const earL = new THREE.Mesh(earGeo, furMat);
-        earL.position.set(-1.9, 6, -0.1);
+        earL.position.set(-1.75, 5.5, -0.1);
         earL.scale.set(1, 1, 0.35);
         bearGroup.add(earL);
 
-        const earLInner = new THREE.Mesh(new THREE.SphereGeometry(0.5, 20, 20), furInnerMat);
-        earLInner.position.set(-1.9, 6, 0.15);
+        const earLInner = new THREE.Mesh(new THREE.SphereGeometry(0.48, 20, 20), furInnerMat);
+        earLInner.position.set(-1.75, 5.5, 0.15);
         earLInner.scale.set(1, 1, 0.3);
         bearGroup.add(earLInner);
 
         const earR = earL.clone();
-        earR.position.x = 1.9;
+        earR.position.x = 1.75;
         bearGroup.add(earR);
-
         const earRInner = earLInner.clone();
-        earRInner.position.x = 1.9;
+        earRInner.position.x = 1.75;
         bearGroup.add(earRInner);
 
-        // Hocico
-        const snout = new THREE.Mesh(new THREE.SphereGeometry(0.85, 24, 24), snoutMat);
-        snout.position.set(0, 3.7, 2);
+        const snout = new THREE.Mesh(new THREE.SphereGeometry(0.8, 24, 24), snoutMat);
+        snout.position.set(0, 3.45, 1.85);
         snout.scale.set(1.2, 0.85, 0.9);
         bearGroup.add(snout);
 
-        // Nariz
-        const nose = new THREE.Mesh(new THREE.SphereGeometry(0.28, 20, 20), blackMat);
-        nose.position.set(0, 3.95, 2.6);
+        const nose = new THREE.Mesh(new THREE.SphereGeometry(0.26, 20, 20), blackMat);
+        nose.position.set(0, 3.65, 2.4);
         nose.scale.set(1.2, 0.9, 0.8);
         bearGroup.add(nose);
 
-        // Ojos
-        const eyeGeo = new THREE.SphereGeometry(0.22, 20, 20);
+        const eyeGeo = new THREE.SphereGeometry(0.2, 20, 20);
         const eyeL = new THREE.Mesh(eyeGeo, blackMat);
-        eyeL.position.set(-0.7, 4.4, 2.05);
+        eyeL.position.set(-0.65, 4.1, 1.9);
         bearGroup.add(eyeL);
-
         const eyeR = eyeL.clone();
-        eyeR.position.x = 0.7;
+        eyeR.position.x = 0.65;
         bearGroup.add(eyeR);
 
-        // Brillos
-        const shineGeo = new THREE.SphereGeometry(0.08, 12, 12);
+        const shineGeo = new THREE.SphereGeometry(0.075, 12, 12);
         const shineL = new THREE.Mesh(shineGeo, whiteMat);
-        shineL.position.set(-0.65, 4.5, 2.22);
+        shineL.position.set(-0.6, 4.18, 2.05);
         bearGroup.add(shineL);
-
         const shineR = shineL.clone();
-        shineR.position.x = 0.75;
+        shineR.position.x = 0.7;
         bearGroup.add(shineR);
 
-        // Mejillas
-        const cheekMat = new THREE.MeshStandardMaterial({ 
-            color: 0xffb3ba, transparent: true, opacity: 0.6, roughness: 1
-        });
-        const cheekGeo = new THREE.SphereGeometry(0.4, 16, 16);
+        const cheekMat = new THREE.MeshStandardMaterial({ color: 0xffb3ba, transparent: true, opacity: 0.65, roughness: 1 });
+        const cheekGeo = new THREE.SphereGeometry(0.38, 16, 16);
         const cheekL = new THREE.Mesh(cheekGeo, cheekMat);
-        cheekL.position.set(-1.2, 3.6, 1.85);
+        cheekL.position.set(-1.1, 3.35, 1.7);
         cheekL.scale.set(1, 0.7, 0.3);
         bearGroup.add(cheekL);
-
         const cheekR = cheekL.clone();
-        cheekR.position.x = 1.2;
+        cheekR.position.x = 1.1;
         bearGroup.add(cheekR);
 
-        // ⚠️ Brazo: cilindro (CapsuleGeometry NO existe en r128)
-        const armGeo = new THREE.CylinderGeometry(0.65, 0.65, 2.6, 16);
+        const armGeo = new THREE.CylinderGeometry(0.6, 0.55, 2.4, 16);
+
         const armL = new THREE.Mesh(armGeo, furMat);
-        armL.position.set(-2.1, 1.2, 1.4);
-        armL.rotation.set(Math.PI / 3.5, 0, -Math.PI / 7);
+        armL.position.set(-2.05, 0.9, 1.15);
+        armL.rotation.set(Math.PI / 2.8, 0, -Math.PI / 5.5);
         bearGroup.add(armL);
 
-        const armR = new THREE.Mesh(armGeo, furMat);
-        armR.position.set(2.1, 1.2, 1.4);
-        armR.rotation.set(Math.PI / 3.5, 0, Math.PI / 7);
-        bearGroup.add(armR);
-
-        // Manitas
-        const pawGeo = new THREE.SphereGeometry(0.7, 20, 20);
+        const pawGeo = new THREE.SphereGeometry(0.75, 20, 20);
         const pawL = new THREE.Mesh(pawGeo, furMat);
-        pawL.position.set(-1.5, 0.4, 2.6);
+        pawL.position.set(-2.1, -0.35, 2.05);
         bearGroup.add(pawL);
 
+        const armR = new THREE.Mesh(armGeo, furMat);
+        armR.position.set(2.05, 0.9, 1.15);
+        armR.rotation.set(Math.PI / 2.8, 0, Math.PI / 5.5);
+        bearGroup.add(armR);
+
         const pawR = new THREE.Mesh(pawGeo, furMat);
-        pawR.position.set(1.5, 0.4, 2.6);
+        pawR.position.set(2.1, -0.35, 2.05);
         bearGroup.add(pawR);
 
-        // Patas
-        const legGeo = new THREE.SphereGeometry(1.1, 20, 20);
+        const legGeo = new THREE.SphereGeometry(1.05, 20, 20);
         const legL = new THREE.Mesh(legGeo, furMat);
-        legL.position.set(-1.4, -2.8, 0.6);
+        legL.position.set(-1.3, -2.6, 0.6);
         legL.scale.set(1, 0.65, 1.3);
         bearGroup.add(legL);
-
         const legR = legL.clone();
-        legR.position.x = 1.4;
+        legR.position.x = 1.3;
         bearGroup.add(legR);
 
-        // Almohadillas
-        const padGeo = new THREE.SphereGeometry(0.55, 16, 16);
+        const padGeo = new THREE.SphereGeometry(0.5, 16, 16);
         const padMat = new THREE.MeshStandardMaterial({ color: 0xb08968, roughness: 0.9 });
         const padL = new THREE.Mesh(padGeo, padMat);
-        padL.position.set(-1.4, -3, 1.4);
+        padL.position.set(-1.3, -2.8, 1.35);
         padL.scale.set(1, 0.4, 0.6);
         bearGroup.add(padL);
-
         const padR = padL.clone();
-        padR.position.x = 1.4;
+        padR.position.x = 1.3;
         bearGroup.add(padR);
 
-        // Ramo
-        createBouquet(bearGroup, stemMat, leafMat, ribbonMat);
+        createSmallBouquet(bearGroup, stemMat, leafMat, ribbonMat);
 
         scene.add(bearGroup);
     }
 
     // ============================================================
-    // RAMO DE FLORES
+    // RAMO
     // ============================================================
-    function createBouquet(parent, stemMat, leafMat, ribbonMat) {
-        flowerMeshes = [];
-
+    function createSmallBouquet(parent, stemMat, leafMat, ribbonMat) {
         const bouquet = new THREE.Group();
-        bouquet.position.set(0, 3.2, 3.2);
+        bouquet.position.set(0, 0.3, 2.6);
         bouquet.rotation.x = -0.15;
+        bouquet.scale.setScalar(1.15);
 
-        const totalFlowers = Math.max(
-            CONFIG.MIN_MEMORIES,
-            Math.min(userMemoryData.length || 3, CONFIG.MAX_MEMORIES)
-        );
+        const positions = [
+            [-0.9, 0.1, 0],
+            [0.9, 0.1, 0],
+            [-0.55, 0.6, 0.1],
+            [0.55, 0.6, 0.1],
+            [0, 0.85, 0.15],
+            [-0.35, -0.35, 0.2],
+            [0.35, -0.35, 0.2]
+        ];
 
-        const stemOrigin = new THREE.Vector3(0, -2.5, 0);
-        const positions = [];
+        positions.forEach((pos, i) => {
+            const flower = new THREE.Group();
+            const petalColor = i % 2 === 0 ? CONFIG.colors.flowers : CONFIG.colors.flowerAlt;
 
-        if (totalFlowers <= 3) {
-            positions.push([-0.9, 0, 0]);
-            positions.push([0.9, 0, 0]);
-            positions.push([0, 0.9, 0.1]);
-        } else if (totalFlowers <= 6) {
-            positions.push([-1.3, 0, 0]);
-            positions.push([-0.65, 0.5, 0.1]);
-            positions.push([0, 0.9, 0.15]);
-            positions.push([0.65, 0.5, 0.1]);
-            positions.push([1.3, 0, 0]);
-            if (totalFlowers === 6) positions.push([0, -0.2, 0.3]);
-        } else {
-            const layers = [
-                { count: Math.ceil(totalFlowers / 3), radius: 1.4, yBase: 0.2, zOff: 0.1 },
-                { count: Math.ceil(totalFlowers / 3), radius: 0.9, yBase: 0.8, zOff: 0.15 },
-                { count: Math.floor(totalFlowers / 3), radius: 0.5, yBase: 1.3, zOff: 0.2 }
-            ];
-            let placed = 0;
-            for (const layer of layers) {
-                for (let i = 0; i < layer.count && placed < totalFlowers; i++, placed++) {
-                    const angle = (i / layer.count) * Math.PI * 2 + (layer.yBase * 3);
-                    positions.push([
-                        Math.cos(angle) * layer.radius,
-                        layer.yBase + Math.sin(angle) * 0.3,
-                        layer.zOff + (i % 2) * 0.15
-                    ]);
-                }
+            const petalMat = new THREE.MeshStandardMaterial({
+                color: petalColor,
+                emissive: petalColor,
+                emissiveIntensity: 0.7,
+                roughness: 0.35,
+                metalness: 0.15
+            });
+
+            const petalGeo = new THREE.SphereGeometry(0.32, 16, 16);
+            for (let j = 0; j < 8; j++) {
+                const petal = new THREE.Mesh(petalGeo, petalMat);
+                const angle = (j / 8) * Math.PI * 2;
+                const radius = 0.42;
+                petal.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, 0);
+                petal.scale.set(1.6, 0.85, 0.5);
+                petal.rotation.z = angle;
+                flower.add(petal);
             }
-        }
 
-        positions.forEach((pos, index) => {
-            const flower = createSingleFlower(index, leafMat);
+            const petalSmallGeo = new THREE.SphereGeometry(0.24, 14, 14);
+            for (let j = 0; j < 6; j++) {
+                const petal = new THREE.Mesh(petalSmallGeo, petalMat);
+                const angle = ((j + 0.5) / 6) * Math.PI * 2;
+                const radius = 0.28;
+                petal.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, 0.08);
+                petal.scale.set(1.3, 0.85, 0.5);
+                petal.rotation.z = angle;
+                flower.add(petal);
+            }
+
+            const centerMat = new THREE.MeshStandardMaterial({
+                color: 0xffd700,
+                emissive: 0xffaa00,
+                emissiveIntensity: 0.9,
+                roughness: 0.25,
+                metalness: 0.6
+            });
+            const center = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 16), centerMat);
+            center.position.z = 0.12;
+            flower.add(center);
+
+            const dotMat = new THREE.MeshStandardMaterial({
+                color: 0xff8800,
+                emissive: 0xff6600,
+                emissiveIntensity: 0.6,
+                roughness: 0.4
+            });
+            const dotGeo = new THREE.SphereGeometry(0.05, 8, 8);
+            for (let j = 0; j < 6; j++) {
+                const dot = new THREE.Mesh(dotGeo, dotMat);
+                const angle = (j / 6) * Math.PI * 2;
+                dot.position.set(Math.cos(angle) * 0.13, Math.sin(angle) * 0.13, 0.22);
+                flower.add(dot);
+            }
+
+            const flowerHaloMat = new THREE.MeshBasicMaterial({
+                color: petalColor,
+                transparent: true,
+                opacity: 0.25,
+                side: THREE.BackSide
+            });
+            const flowerHalo = new THREE.Mesh(new THREE.SphereGeometry(0.75, 16, 16), flowerHaloMat);
+            flower.add(flowerHalo);
+
             flower.position.set(pos[0], pos[1], pos[2]);
 
-            // Tallo
-            const stemHeight = Math.sqrt(
-                Math.pow(pos[0] - stemOrigin.x, 2) +
-                Math.pow(pos[1] - stemOrigin.y, 2) +
-                Math.pow(pos[2] - stemOrigin.z, 2)
-            );
+            const stemLength = Math.sqrt(pos[0]*pos[0] + (pos[1]-(-1.5))*(pos[1]-(-1.5)));
             const stem = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.06, 0.08, stemHeight, 8),
+                new THREE.CylinderGeometry(0.055, 0.08, stemLength, 8),
                 stemMat
             );
-
-            const midX = (pos[0] + stemOrigin.x) / 2;
-            const midY = (pos[1] + stemOrigin.y) / 2;
-            const midZ = (pos[2] + stemOrigin.z) / 2;
-            stem.position.set(midX, midY, midZ);
-
-            const dx = pos[0] - stemOrigin.x;
-            const dy = pos[1] - stemOrigin.y;
-            const dz = pos[2] - stemOrigin.z;
-            const angleZ = Math.atan2(dx, dy);
-            const angleX = -Math.atan2(dz, Math.sqrt(dx*dx + dy*dy));
-            stem.rotation.set(angleX, 0, angleZ);
-
+            const stemMidX = pos[0] * 0.5;
+            const stemMidY = (pos[1] + (-1.5)) * 0.5;
+            stem.position.set(stemMidX, stemMidY, pos[2] * 0.5);
+            const stemAngle = Math.atan2(pos[0], pos[1] - (-1.5));
+            stem.rotation.z = stemAngle;
             bouquet.add(stem);
+
+            const leafGeo = new THREE.SphereGeometry(0.22, 12, 12);
+            const leaf = new THREE.Mesh(leafGeo, leafMat);
+            leaf.position.set(pos[0] * 0.4, pos[1] * 0.4, pos[2] + 0.05);
+            leaf.scale.set(1.6, 0.3, 0.7);
+            leaf.rotation.z = stemAngle + 0.8;
+            bouquet.add(leaf);
+
             bouquet.add(flower);
-            flowerMeshes.push(flower);
         });
 
-        // Lazo
-        const ribbonKnot = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), ribbonMat);
-        ribbonKnot.position.copy(stemOrigin).add(new THREE.Vector3(0, 0.2, 0.1));
+        const ribbonKnot = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 16), ribbonMat);
+        ribbonKnot.position.set(0, -1.4, 0.2);
         bouquet.add(ribbonKnot);
 
-        const ribbonGeo = new THREE.TorusGeometry(0.5, 0.08, 8, 20);
-        const ribbonL = new THREE.Mesh(ribbonGeo, ribbonMat);
-        ribbonL.position.set(-0.5, -2.2, 0.2);
-        ribbonL.rotation.set(0.3, 0, 0.6);
-        bouquet.add(ribbonL);
+        const bowGeo = new THREE.TorusGeometry(0.55, 0.12, 12, 24);
 
-        const ribbonR = new THREE.Mesh(ribbonGeo, ribbonMat);
-        ribbonR.position.set(0.5, -2.2, 0.2);
-        ribbonR.rotation.set(0.3, 0, -0.6);
-        bouquet.add(ribbonR);
+        const bowL = new THREE.Mesh(bowGeo, ribbonMat);
+        bowL.position.set(-0.65, -1.35, 0.25);
+        bowL.rotation.set(0.4, 0.3, 0.6);
+        bowL.scale.set(1.2, 0.7, 1);
+        bouquet.add(bowL);
 
-        const ribbonTailGeo = new THREE.CylinderGeometry(0.06, 0.1, 1.2, 8);
-        const tailL = new THREE.Mesh(ribbonTailGeo, ribbonMat);
-        tailL.position.set(-0.7, -3, 0.2);
-        tailL.rotation.set(0, 0, 0.25);
+        const bowR = new THREE.Mesh(bowGeo, ribbonMat);
+        bowR.position.set(0.65, -1.35, 0.25);
+        bowR.rotation.set(0.4, -0.3, -0.6);
+        bowR.scale.set(1.2, 0.7, 1);
+        bouquet.add(bowR);
+
+        const tailGeo = new THREE.CylinderGeometry(0.07, 0.1, 1.6, 8);
+        const tailL = new THREE.Mesh(tailGeo, ribbonMat);
+        tailL.position.set(-0.85, -2.2, 0.25);
+        tailL.rotation.set(0, 0, 0.2);
         bouquet.add(tailL);
 
-        const tailR = new THREE.Mesh(ribbonTailGeo, ribbonMat);
-        tailR.position.set(0.7, -3, 0.2);
-        tailR.rotation.set(0, 0, -0.25);
+        const tailR = new THREE.Mesh(tailGeo, ribbonMat);
+        tailR.position.set(0.85, -2.2, 0.25);
+        tailR.rotation.set(0, 0, -0.2);
         bouquet.add(tailR);
 
         parent.add(bouquet);
     }
 
     // ============================================================
-    // FLOR INDIVIDUAL
+    // DISCOS ORBITALES EN CAPAS (sin cruces con las fotos)
+    // ------------------------------------------------------------
+    // Idea: cada "nivel" es un anillo horizontal con su propia
+    // altura. Las fotos orbitan en el BORDE exterior del anillo,
+    // así que nunca lo atraviesan. El osito queda en el centro
+    // visual, con los discos apilados arriba/abajo como un sistema
+    // planetario limpio.
     // ============================================================
-    function createSingleFlower(index, leafMat) {
-        const flowerGroup = new THREE.Group();
-        flowerGroup.userData = {
-            memoryIndex: index,
-            isFlower: true,
-            pulseOffset: Math.random() * Math.PI * 2
-        };
+    function createFloatingPhotos() {
+        photoSprites.forEach(p => {
+            scene.remove(p);
+            if (p.userData.material) p.userData.material.dispose();
+            if (p.userData.texture) p.userData.texture.dispose();
+        });
+        photoSprites = [];
 
-        const petalColor = index % 2 === 0 ? CONFIG.colors.flowers : CONFIG.colors.flowerAlt;
-        const petalMat = new THREE.MeshStandardMaterial({
-            color: petalColor,
-            emissive: petalColor,
-            emissiveIntensity: 0.35,
-            roughness: 0.4,
-            metalness: 0.1
+        orbitRings.forEach(r => {
+            scene.remove(r);
+            r.traverse(child => {
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                    if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+                    else child.material.dispose();
+                }
+            });
+        });
+        orbitRings = [];
+
+        const total = Math.max(CONFIG.MIN_MEMORIES, Math.min(userMemoryData.length || 3, CONFIG.MAX_MEMORIES));
+
+        // ============================================================
+        // CONFIGURACIÓN DE DISCOS
+        // ------------------------------------------------------------
+        // Cada disco tiene:
+        // - radius: radio del anillo
+        // - y: altura vertical (para apilarlos)
+        // - color: color del anillo
+        // - tiltX: inclinación leve (para que no sea 100% plano)
+        // - speed: velocidad de rotación
+        // ============================================================
+        const discs = [
+            { radius: 9,   y: -1.5,  color: 0x00ffff, glowColor: 0x00aaff, speed: 0.35,  thickness: 0.06, tiltX: 0.05 },
+            { radius: 11,  y: 1.5,   color: 0xffd700, glowColor: 0xffaa00, speed: -0.28, thickness: 0.07, tiltX: -0.04 },
+            { radius: 13,  y: 4.5,   color: 0xff66cc, glowColor: 0x9333ea, speed: 0.22,  thickness: 0.07, tiltX: 0.06 },
+            { radius: 15,  y: 7.5,   color: 0x9333ea, glowColor: 0xc084fc, speed: -0.18, thickness: 0.06, tiltX: -0.05 }
+        ];
+
+        discs.forEach((disc, di) => {
+            const discGroup = new THREE.Group();
+            discGroup.userData.isDisc = true;
+            discGroup.userData.baseSpeed = 0.0012 * (di % 2 === 0 ? 1 : -1);
+            discGroup.userData.discIndex = di;
+            discGroup.userData.baseRotX = disc.tiltX;
+            discGroup.userData.rotX = disc.tiltX;
+
+            // CAPA 1: núcleo del anillo
+            const mainRingGeo = new THREE.TorusGeometry(disc.radius, disc.thickness, 16, 140);
+            const mainRingMat = new THREE.MeshStandardMaterial({
+                color: disc.color,
+                emissive: disc.color,
+                emissiveIntensity: 2.0,
+                roughness: 0.15,
+                metalness: 0.9,
+                transparent: true,
+                opacity: 0.95
+            });
+            const mainRing = new THREE.Mesh(mainRingGeo, mainRingMat);
+            mainRing.rotation.x = Math.PI / 2;
+            mainRing.userData.baseOpacity = 0.95;
+            discGroup.add(mainRing);
+
+            // CAPA 2: glow
+            const glowRingGeo = new THREE.TorusGeometry(disc.radius, disc.thickness * 5, 12, 140);
+            const glowRingMat = new THREE.MeshBasicMaterial({
+                color: disc.glowColor,
+                transparent: true,
+                opacity: 0.25,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const glowRing = new THREE.Mesh(glowRingGeo, glowRingMat);
+            glowRing.rotation.x = Math.PI / 2;
+            glowRing.userData.baseOpacity = 0.25;
+            discGroup.add(glowRing);
+
+            // CAPA 3: aura
+            const auraRingGeo = new THREE.TorusGeometry(disc.radius, disc.thickness * 14, 10, 120);
+            const auraRingMat = new THREE.MeshBasicMaterial({
+                color: disc.color,
+                transparent: true,
+                opacity: 0.06,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const auraRing = new THREE.Mesh(auraRingGeo, auraRingMat);
+            auraRing.rotation.x = Math.PI / 2;
+            auraRing.userData.baseOpacity = 0.06;
+            discGroup.add(auraRing);
+
+            // Partículas decorativas
+            const particleCount = 50;
+            const posArray = new Float32Array(particleCount * 3);
+            const colArray = new Float32Array(particleCount * 3);
+            const cA = new THREE.Color(disc.color);
+            const cB = new THREE.Color(disc.glowColor);
+            const cWhite = new THREE.Color(0xffffff);
+
+            for (let i = 0; i < particleCount; i++) {
+                const angle = (i / particleCount) * Math.PI * 2;
+                const r = disc.radius + (Math.random() - 0.5) * 1.0;
+                posArray[i * 3]     = Math.cos(angle) * r;
+                posArray[i * 3 + 1] = (Math.random() - 0.5) * 0.3;
+                posArray[i * 3 + 2] = Math.sin(angle) * r;
+
+                const mix = Math.random();
+                const col = mix < 0.5 ? cA.clone().lerp(cB, Math.random()) : cWhite.clone().lerp(cA, Math.random());
+                colArray[i * 3]     = col.r;
+                colArray[i * 3 + 1] = col.g;
+                colArray[i * 3 + 2] = col.b;
+            }
+            const particleGeo = new THREE.BufferGeometry();
+            particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            particleGeo.setAttribute('color', new THREE.BufferAttribute(colArray, 3));
+            const particleMat = new THREE.PointsMaterial({
+                size: 0.3,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.95,
+                sizeAttenuation: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const particles = new THREE.Points(particleGeo, particleMat);
+            discGroup.add(particles);
+            discGroup.userData.particles = particles;
+
+            // Sparkles
+            const sparkleCount = 10;
+            const sparkleGeo = new THREE.BufferGeometry();
+            const sparklePos = new Float32Array(sparkleCount * 3);
+            for (let i = 0; i < sparkleCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const r = disc.radius + (Math.random() - 0.5) * 0.6;
+                sparklePos[i * 3]     = Math.cos(angle) * r;
+                sparklePos[i * 3 + 1] = (Math.random() - 0.5) * 0.3;
+                sparklePos[i * 3 + 2] = Math.sin(angle) * r;
+            }
+            sparkleGeo.setAttribute('position', new THREE.BufferAttribute(sparklePos, 3));
+            const sparkleMat = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.55,
+                transparent: true,
+                opacity: 0.9,
+                sizeAttenuation: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const sparkles = new THREE.Points(sparkleGeo, sparkleMat);
+            discGroup.add(sparkles);
+            discGroup.userData.sparkles = sparkles;
+
+            // Aplicar tilt leve al grupo
+            discGroup.rotation.x = disc.tiltX;
+            discGroup.position.y = disc.y;
+
+            scene.add(discGroup);
+            orbitRings.push(discGroup);
         });
 
-        // Pétalos externos
-        const petalCount = 8;
-        const petalGeo = new THREE.SphereGeometry(0.28, 16, 16);
-        for (let i = 0; i < petalCount; i++) {
-            const petal = new THREE.Mesh(petalGeo, petalMat);
-            const angle = (i / petalCount) * Math.PI * 2;
-            const radius = 0.42;
-            petal.position.set(
-                Math.cos(angle) * radius,
-                Math.sin(angle) * radius,
-                -0.02
-            );
-            petal.scale.set(1.6, 0.9, 0.5);
-            petal.rotation.z = angle;
-            flowerGroup.add(petal);
+        // ============================================================
+        // DISTRIBUIR LAS FOTOS EN LOS DISCOS
+        // ------------------------------------------------------------
+        // Cada foto orbita en el borde del disco que le toca.
+        // Al estar las fotos en el borde exterior y los discos
+        // apilados en alturas distintas, NUNCA se cruzan.
+        // ============================================================
+        for (let i = 0; i < total; i++) {
+            const photoGroup = new THREE.Group();
+            const disc = discs[i % discs.length];
+            const baseAngle = (i / total) * Math.PI * 2 + (i % discs.length) * 0.7;
+
+            const frameColor = CONFIG.colors.photoFrames[i % CONFIG.colors.photoFrames.length];
+
+            const frameMat = new THREE.MeshStandardMaterial({
+                color: frameColor,
+                emissive: frameColor,
+                emissiveIntensity: 1.0,
+                roughness: 0.2,
+                metalness: 0.6
+            });
+            const frameGeo = new THREE.BoxGeometry(2.6, 3.2, 0.1);
+            const frame = new THREE.Mesh(frameGeo, frameMat);
+            photoGroup.add(frame);
+
+            const edgeMat = new THREE.MeshBasicMaterial({
+                color: frameColor,
+                transparent: true,
+                opacity: 0.6,
+                side: THREE.BackSide
+            });
+            const edgeGeo = new THREE.BoxGeometry(2.75, 3.35, 0.05);
+            const edge = new THREE.Mesh(edgeGeo, edgeMat);
+            edge.position.z = 0.02;
+            photoGroup.add(edge);
+
+            const texture = getPhotoTexture(i);
+            const photoMat = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+            const photoGeo = new THREE.PlaneGeometry(2.4, 3.0);
+            const photoMesh = new THREE.Mesh(photoGeo, photoMat);
+            photoMesh.position.z = 0.06;
+            photoGroup.add(photoMesh);
+
+            const haloMat = new THREE.MeshBasicMaterial({
+                color: frameColor,
+                transparent: true,
+                opacity: 0.2,
+                side: THREE.DoubleSide
+            });
+            const haloGeo = new THREE.PlaneGeometry(3.6, 4.2);
+            const halo = new THREE.Mesh(haloGeo, haloMat);
+            halo.position.z = -0.15;
+            halo.userData.isHalo = true;
+            photoGroup.add(halo);
+
+            const auraMat = new THREE.MeshBasicMaterial({
+                color: frameColor,
+                transparent: true,
+                opacity: 0.15,
+                side: THREE.BackSide
+            });
+            const auraGeo = new THREE.SphereGeometry(1.8, 16, 16);
+            const aura = new THREE.Mesh(auraGeo, auraMat);
+            aura.userData.isAura = true;
+            photoGroup.add(aura);
+
+            if (userMemoryData[i] && userMemoryData[i].text && userMemoryData[i].text.trim()) {
+                const dotMat = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+                const dot = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12), dotMat);
+                dot.position.set(1.05, -1.45, 0.15);
+                photoGroup.add(dot);
+
+                const dotHaloMat = new THREE.MeshBasicMaterial({
+                    color: 0x00ff88,
+                    transparent: true,
+                    opacity: 0.4,
+                    side: THREE.BackSide
+                });
+                const dotHalo = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 12), dotHaloMat);
+                dotHalo.position.copy(dot.position);
+                photoGroup.add(dotHalo);
+            }
+
+            photoGroup.userData = {
+                memoryIndex: i,
+                isPhoto: true,
+                discIndex: i % discs.length,
+                orbitRadius: disc.radius,
+                orbitSpeed: disc.speed,
+                orbitY: disc.y,
+                tiltX: disc.tiltX,
+                baseAngle: baseAngle,
+                phase: i * 1.3,
+                frameColor: frameColor
+            };
+
+            scene.add(photoGroup);
+            photoSprites.push(photoGroup);
         }
-
-        // Pétalos internos
-        const petalSmallGeo = new THREE.SphereGeometry(0.22, 16, 16);
-        for (let i = 0; i < petalCount; i++) {
-            const petal = new THREE.Mesh(petalSmallGeo, petalMat);
-            const angle = ((i + 0.5) / petalCount) * Math.PI * 2;
-            const radius = 0.3;
-            petal.position.set(
-                Math.cos(angle) * radius,
-                Math.sin(angle) * radius,
-                0.06
-            );
-            petal.scale.set(1.3, 0.85, 0.5);
-            petal.rotation.z = angle;
-            flowerGroup.add(petal);
-        }
-
-        // Centro
-        const centerMat = new THREE.MeshStandardMaterial({
-            color: CONFIG.colors.flowerCenter,
-            emissive: 0xffaa00,
-            emissiveIntensity: 0.5,
-            roughness: 0.3
-        });
-        const center = new THREE.Mesh(new THREE.SphereGeometry(0.28, 20, 20), centerMat);
-        center.position.z = 0.1;
-        flowerGroup.add(center);
-
-        // Puntos del centro
-        const dotMat = new THREE.MeshStandardMaterial({ color: 0xff8800, roughness: 0.5 });
-        const dotGeo = new THREE.SphereGeometry(0.06, 10, 10);
-        for (let i = 0; i < 6; i++) {
-            const dot = new THREE.Mesh(dotGeo, dotMat);
-            const angle = (i / 6) * Math.PI * 2;
-            dot.position.set(Math.cos(angle) * 0.15, Math.sin(angle) * 0.15, 0.28);
-            flowerGroup.add(dot);
-        }
-
-        // Hojas
-        const leafGeo = new THREE.SphereGeometry(0.3, 12, 12);
-        for (let i = 0; i < 2; i++) {
-            const leaf = new THREE.Mesh(leafGeo, leafMat);
-            const angle = i === 0 ? -0.7 : 0.7;
-            leaf.position.set(Math.sin(angle) * 0.7, -0.6, 0.05);
-            leaf.scale.set(1.3, 0.3, 0.6);
-            leaf.rotation.z = angle;
-            flowerGroup.add(leaf);
-        }
-
-        // Halo (hover)
-        const haloMat = new THREE.MeshBasicMaterial({
-            color: 0x00ffff,
-            transparent: true,
-            opacity: 0,
-            side: THREE.BackSide
-        });
-        const halo = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 16), haloMat);
-        halo.userData.isHalo = true;
-        flowerGroup.add(halo);
-
-        // Indicador "tiene foto"
-        const indicatorMat = new THREE.MeshBasicMaterial({
-            color: 0x00ff88,
-            transparent: true,
-            opacity: 0
-        });
-        const indicator = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), indicatorMat);
-        indicator.position.set(0, 0.9, 0);
-        indicator.userData.isIndicator = true;
-        flowerGroup.add(indicator);
-
-        return flowerGroup;
     }
 
     // ============================================================
-    // RECREAR ESCENA
+    // TEXTURA DE LA FOTO
     // ============================================================
-    function recreateBear() {
-        if (bearGroup) {
-            scene.remove(bearGroup);
-            bearGroup = null;
+    function getPhotoTexture(index) {
+        const data = userMemoryData[index] || { img: '' };
+        const cacheKey = `photo_${index}_${data.img ? data.img.length : 0}`;
+
+        if (photoTextures[cacheKey]) {
+            return photoTextures[cacheKey];
         }
-        flowerMeshes = [];
-        createBearWithFlowers();
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 640;
+        const ctx = canvas.getContext('2d');
+
+        const gradient = ctx.createLinearGradient(0, 0, 512, 640);
+        gradient.addColorStop(0, '#0f172a');
+        gradient.addColorStop(1, '#1e293b');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 512, 640);
+
+        if (data.img) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+
+            img.onload = () => {
+                const scale = Math.max(512 / img.width, 640 / img.height);
+                const w = img.width * scale;
+                const h = img.height * scale;
+                const x = (512 - w) / 2;
+                const y = (640 - h) / 2;
+                ctx.drawImage(img, x, y, w, h);
+                texture.needsUpdate = true;
+            };
+            img.onerror = () => {
+                drawPlaceholder(ctx, index);
+                texture.needsUpdate = true;
+            };
+            img.src = data.img;
+
+            photoTextures[cacheKey] = texture;
+            return texture;
+        } else {
+            drawPlaceholder(ctx, index);
+            const texture = new THREE.CanvasTexture(canvas);
+            photoTextures[cacheKey] = texture;
+            return texture;
+        }
+    }
+
+    function drawPlaceholder(ctx, index) {
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+        ctx.beginPath();
+        const cx = 256, cy = 320;
+        for (let i = 0; i < 10; i++) {
+            const angle = (i / 10) * Math.PI * 2 - Math.PI / 2;
+            const radius = i % 2 === 0 ? 140 : 60;
+            const x = cx + Math.cos(angle) * radius;
+            const y = cy + Math.sin(angle) * radius;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.font = 'bold 140px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.6)';
+        ctx.fillText('✦', cx, cy);
+
+        ctx.font = 'bold 42px Arial';
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.95)';
+        ctx.fillText(`#${index + 1}`, cx, cy + 130);
+
+        ctx.font = '20px Arial';
+        ctx.fillStyle = 'rgba(148, 163, 184, 0.8)';
+        ctx.fillText('Personaliza esta estrella', cx, cy - 140);
     }
 
     // ============================================================
@@ -1056,31 +1349,86 @@
 
         const t = clock.getElapsedTime();
 
-        flowerMeshes.forEach((flower, i) => {
-            const pulse = 1 + Math.sin(t * 1.5 + flower.userData.pulseOffset) * 0.05;
-            flower.scale.setScalar(pulse);
-            flower.rotation.z += 0.003;
-            flower.rotation.x = Math.sin(t + i * 0.5) * 0.1;
+        // Fotos orbitando sobre su disco correspondiente
+        photoSprites.forEach((photo) => {
+            const d = photo.userData;
+            const angle = d.baseAngle + t * d.orbitSpeed;
 
-            const halo = flower.children.find(c => c.userData.isHalo);
-            if (halo) {
-                halo.material.opacity = Math.max(0, halo.material.opacity - 0.02);
+            // Posición en el plano horizontal del disco
+            const x = Math.cos(angle) * d.orbitRadius;
+            const z = Math.sin(angle) * d.orbitRadius;
+
+            // Aplicamos la inclinación del disco a la posición Y
+            const tiltOffsetY = z * Math.sin(d.tiltX);
+
+            const floatY = Math.sin(t * 1.5 + d.phase) * 0.25;
+
+            photo.position.set(
+                x,
+                d.orbitY + tiltOffsetY + floatY,
+                z
+            );
+
+            // Orientar la foto hacia afuera del disco
+            photo.rotation.y = -angle + Math.PI / 2;
+            photo.rotation.z = Math.sin(t * 0.6 + d.phase) * 0.15;
+            photo.rotation.x = Math.sin(t * 0.4 + d.phase) * 0.1;
+
+            const pulse = 1 + Math.sin(t * 2 + d.phase) * 0.04;
+            photo.scale.setScalar(pulse);
+
+            const halo = photo.children.find(c => c.userData.isHalo);
+            if (halo && halo.material.opacity > 0.2) {
+                halo.material.opacity = Math.max(0.2, halo.material.opacity - 0.01);
             }
 
-            const indicator = flower.children.find(c => c.userData.isIndicator);
-            if (indicator) {
-                const hasPhoto = userMemoryData[flower.userData.memoryIndex]?.img;
-                const targetOpacity = hasPhoto ? 0.9 : 0;
-                indicator.material.opacity += (targetOpacity - indicator.material.opacity) * 0.1;
-                if (hasPhoto) {
-                    indicator.position.y = 0.9 + Math.sin(t * 3 + i) * 0.05;
-                }
+            const aura = photo.children.find(c => c.userData.isAura);
+            if (aura) {
+                aura.material.opacity = 0.12 + Math.sin(t * 2 + d.phase) * 0.08;
+                const auraScale = 1 + Math.sin(t * 1.5 + d.phase) * 0.08;
+                aura.scale.setScalar(auraScale);
             }
         });
 
+        // Discos: rotación propia y pulso
+        orbitRings.forEach((disc, i) => {
+            disc.rotation.y += disc.userData.baseSpeed;
+
+            // Pulso de opacidad
+            disc.children.forEach(child => {
+                if (child.material && child.userData.baseOpacity !== undefined) {
+                    child.material.opacity = child.userData.baseOpacity * (0.85 + Math.sin(t * 1.8 + i) * 0.2);
+                }
+            });
+
+            if (disc.userData.particles) {
+                disc.userData.particles.rotation.y += 0.004 * (i % 2 === 0 ? 1 : -1);
+            }
+
+            if (disc.userData.sparkles) {
+                disc.userData.sparkles.rotation.y -= 0.003 * (i % 2 === 0 ? 1 : -1);
+                const s = 0.6 + Math.sin(t * 3 + i) * 0.4;
+                disc.userData.sparkles.material.opacity = 0.5 + s * 0.5;
+                disc.userData.sparkles.material.size = 0.45 + s * 0.3;
+            }
+        });
+
+        // Osito + Planeta
         if (bearGroup) {
-            bearGroup.position.y = -1.5 + Math.sin(t * 0.8) * 0.1;
+            bearGroup.position.y = 1.5 + Math.sin(t * 0.8) * 0.15;
             bearGroup.rotation.y = Math.sin(t * 0.3) * 0.08;
+
+            if (bearGroup.userData.planetGroup) {
+                const pg = bearGroup.userData.planetGroup;
+                pg.rotation.y += 0.003;
+
+                if (pg.userData.particles) {
+                    pg.userData.particles.rotation.y += 0.008;
+                }
+                if (pg.userData.halo) {
+                    pg.userData.halo.material.opacity = 0.15 + Math.sin(t * 1.2) * 0.08;
+                }
+            }
         }
 
         controls.update();
@@ -1096,10 +1444,6 @@
     // ============================================================
     // RAYCASTING
     // ============================================================
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-    let hoveredFlower = null;
-
     function onPointerDown(event) {
         if (event.target.tagName !== 'CANVAS') return;
 
@@ -1107,14 +1451,13 @@
         pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
         raycaster.setFromCamera(pointer, camera);
-        const intersects = raycaster.intersectObjects(flowerMeshes, true);
+        const intersects = raycaster.intersectObjects(photoSprites, true);
 
         if (intersects.length > 0) {
             let obj = intersects[0].object;
-            while (obj.parent && !obj.userData.isFlower) obj = obj.parent;
-
-            if (obj.userData.isFlower) {
-                openMemoryDisplay(obj.userData.memoryIndex);
+            while (obj.parent && !obj.userData.isPhoto) obj = obj.parent;
+            if (obj.userData.isPhoto) {
+                openCard(obj.userData.memoryIndex);
             }
         }
     }
@@ -1126,21 +1469,21 @@
         pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
         raycaster.setFromCamera(pointer, camera);
-        const intersects = raycaster.intersectObjects(flowerMeshes, true);
+        const intersects = raycaster.intersectObjects(photoSprites, true);
 
-        if (hoveredFlower) {
-            const halo = hoveredFlower.children.find(c => c.userData.isHalo);
-            if (halo) halo.material.opacity = 0;
-            hoveredFlower = null;
+        if (hoveredPhoto) {
+            const halo = hoveredPhoto.children.find(c => c.userData.isHalo);
+            if (halo) halo.material.opacity = 0.2;
+            hoveredPhoto = null;
         }
 
         if (intersects.length > 0) {
             let obj = intersects[0].object;
-            while (obj.parent && !obj.userData.isFlower) obj = obj.parent;
-            if (obj.userData.isFlower) {
-                hoveredFlower = obj;
+            while (obj.parent && !obj.userData.isPhoto) obj = obj.parent;
+            if (obj.userData.isPhoto) {
+                hoveredPhoto = obj;
                 const halo = obj.children.find(c => c.userData.isHalo);
-                if (halo) halo.material.opacity = 0.35;
+                if (halo) halo.material.opacity = 0.6;
                 document.body.style.cursor = 'pointer';
             }
         } else {
@@ -1149,7 +1492,7 @@
     }
 
     // ============================================================
-    // COMPRESIÓN DE IMÁGENES
+    // COMPRESIÓN
     // ============================================================
     function getCompressionSettings(totalPhotos) {
         if (totalPhotos <= 5)  return { maxSize: 700, quality: 0.75 };
@@ -1207,7 +1550,7 @@
                 <div class="input-group" data-index="${i}">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
                         <label style="margin:0;">
-                            🌸 Flor #${i + 1}
+                            ✨ Estrella #${i + 1}
                         </label>
                         <button class="delete-memory-btn" data-index="${i}"
                             style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3);
@@ -1247,14 +1590,14 @@
                     font-size: 0.8rem; font-weight: 600; cursor: pointer;
                     transition: all 0.2s;
                 ">
-                    <i class="fas fa-plus"></i> Añadir otra flor (${total}/${CONFIG.MAX_MEMORIES})
+                    <i class="fas fa-plus"></i> Añadir otra estrella (${total}/${CONFIG.MAX_MEMORIES})
                 </button>
             `);
             document.getElementById('add-memory-btn').addEventListener('click', addMemory);
         } else {
             container.insertAdjacentHTML('beforeend', `
                 <p style="text-align:center; font-size:0.7rem; color:#f59e0b; padding:0.5rem; margin-top:0.5rem;">
-                    <i class="fas fa-exclamation-triangle"></i> Límite máximo (${CONFIG.MAX_MEMORIES} flores)
+                    <i class="fas fa-exclamation-triangle"></i> Límite máximo (${CONFIG.MAX_MEMORIES} estrellas)
                 </p>
             `);
         }
@@ -1293,6 +1636,15 @@
             userMemoryData[index] = userMemoryData[index] || {};
             userMemoryData[index].img = compressed;
 
+            Object.keys(photoTextures).forEach(key => {
+                if (key.startsWith(`photo_${index}_`)) {
+                    photoTextures[key].dispose();
+                    delete photoTextures[key];
+                }
+            });
+
+            createFloatingPhotos();
+
             label.innerHTML = '✅ Imagen lista';
             setTimeout(() => { label.innerHTML = originalText; }, 2000);
         } catch (err) {
@@ -1307,19 +1659,19 @@
         captureCurrentInputs();
         userMemoryData.push({ img: '', text: '' });
         setupConfigInputs();
-        recreateBear();
+        createFloatingPhotos();
     }
 
     function deleteMemory(index) {
         if (userMemoryData.length <= CONFIG.MIN_MEMORIES) {
-            showToast('Debe haber al menos ' + CONFIG.MIN_MEMORIES + ' flores', 'error');
+            showToast('Debe haber al menos ' + CONFIG.MIN_MEMORIES + ' estrellas', 'error');
             return;
         }
-        if (!confirm(`¿Eliminar la flor #${index + 1}?`)) return;
+        if (!confirm(`¿Eliminar la estrella #${index + 1}?`)) return;
         captureCurrentInputs();
         userMemoryData.splice(index, 1);
         setupConfigInputs();
-        recreateBear();
+        createFloatingPhotos();
     }
 
     // ============================================================
@@ -1331,7 +1683,6 @@
             const utf8 = unescape(encodeURIComponent(json));
             return btoa(utf8);
         } catch (e) {
-            console.error('Error codificando:', e);
             return '';
         }
     }
@@ -1342,7 +1693,6 @@
             const json = decodeURIComponent(escape(utf8));
             return JSON.parse(json);
         } catch (e) {
-            console.error('Error decodificando:', e);
             return null;
         }
     }
@@ -1383,9 +1733,9 @@
 
     function loadDefaultData() {
         userMemoryData = [
-            { img: '', text: "¡Bienvenido a nuestro universo! 🌸" },
-            { img: '', text: "Cada flor guarda un recuerdo especial." },
-            { img: '', text: "Toca las flores para ver las fotos. 💙" }
+            { img: '', text: "¡Bienvenido a nuestro universo! ✨" },
+            { img: '', text: "Cada estrella guarda un recuerdo especial." },
+            { img: '', text: "Toca las fotos flotantes para ver las cartas. 💙" }
         ];
     }
 
@@ -1424,7 +1774,6 @@
                 return;
             }
 
-            console.warn('API no disponible, usando fallback Base64');
             const encoded = encodeData(userMemoryData);
             const baseUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
             const finalUrl = `${baseUrl}?u=${encoded}`;
@@ -1446,18 +1795,19 @@
     }
 
     // ============================================================
-    // MOSTRAR RECUERDO
+    // ABRIR CARTA
     // ============================================================
-    function openMemoryDisplay(index) {
+    function openCard(index) {
         activeMemoryIndex = index;
         const data = userMemoryData[index] || { img: '', text: '' };
 
-        const card = document.getElementById('main-card-display');
-        const imgEl = document.getElementById('display-img');
-        const placeholder = document.getElementById('display-placeholder');
-        const textEl = document.getElementById('display-text');
+        const overlay = document.getElementById('card-overlay');
+        const imgEl = document.getElementById('card-img');
+        const placeholder = document.getElementById('card-placeholder');
+        const textEl = document.getElementById('card-message');
+        const titleEl = document.getElementById('card-title');
 
-        card.classList.add('visible');
+        titleEl.textContent = `Recuerdo #${index + 1}`;
 
         if (data.img) {
             imgEl.src = data.img;
@@ -1468,7 +1818,16 @@
             placeholder.style.display = 'flex';
         }
 
-        textEl.textContent = data.text || "Flor vacía. ¡Añade un recuerdo en la configuración!";
+        textEl.textContent = data.text || "Esta estrella aún no tiene un mensaje. ¡Añádelo en el configurador!";
+
+        overlay.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeCard() {
+        const overlay = document.getElementById('card-overlay');
+        overlay.classList.remove('visible');
+        document.body.style.overflow = '';
     }
 
     // ============================================================
@@ -1522,7 +1881,7 @@
     }
 
     // ============================================================
-    // EVENT LISTENERS UI
+    // EVENT LISTENERS
     // ============================================================
     document.getElementById('start-btn').addEventListener('click', () => {
         document.getElementById('intro-overlay').classList.add('hidden');
@@ -1581,18 +1940,28 @@
         }
     });
 
-    document.getElementById('prev-btn').addEventListener('click', () => {
+    document.getElementById('card-close-btn').addEventListener('click', closeCard);
+
+    document.getElementById('card-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'card-overlay') closeCard();
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeCard();
+    });
+
+    document.getElementById('card-prev').addEventListener('click', () => {
         const total = userMemoryData.length;
         let idx = activeMemoryIndex - 1;
         if (idx < 0) idx = total - 1;
-        openMemoryDisplay(idx);
+        openCard(idx);
     });
 
-    document.getElementById('next-btn').addEventListener('click', () => {
+    document.getElementById('card-next').addEventListener('click', () => {
         const total = userMemoryData.length;
         let idx = activeMemoryIndex + 1;
         if (idx >= total) idx = 0;
-        openMemoryDisplay(idx);
+        openCard(idx);
     });
 
     document.addEventListener('visibilitychange', () => {
@@ -1600,7 +1969,7 @@
     });
 
     // ============================================================
-    // INICIO CON TRY/CATCH
+    // INICIO
     // ============================================================
     window.addEventListener('load', async () => {
         try {
@@ -1613,8 +1982,6 @@
             }, 400);
         } catch (error) {
             console.error('❌ Error al inicializar:', error);
-
-            // Mostrar el error en pantalla
             const loading = document.getElementById('loading');
             if (loading) {
                 loading.innerHTML = `
@@ -1632,7 +1999,6 @@
         }
     });
 
-    // Prevenir zoom en doble tap
     let lastTouchEnd = 0;
     document.addEventListener('touchend', (e) => {
         const now = Date.now();
